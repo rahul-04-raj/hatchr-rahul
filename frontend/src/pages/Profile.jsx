@@ -60,9 +60,10 @@ export default function Profile(){
   const [posts, setPosts] = useState([])
   const [selectedPost, setSelectedPost] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 })
+  const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
   const currentUser = useAuth(state => state.user)
+  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 })
 
   useEffect(()=>{ load() }, [username])
 
@@ -70,15 +71,25 @@ export default function Profile(){
     setLoading(true)
     try{
       const res = await API.get(`/users/${username}`)
-      setUser(res.data.user)
+      const userData = res.data.user
+      setUser(userData)
+      
+      // Check if current user is following this profile
+      if (currentUser && userData.followers) {
+        const isCurrentlyFollowing = userData.followers.some(f => 
+          f._id === currentUser._id || f === currentUser._id
+        )
+        setIsFollowing(isCurrentlyFollowing)
+      }
+
       // get user's posts
       const postsRes = await API.get('/posts')
       const userPosts = postsRes.data.posts.filter(p => p.user && p.user.username === username)
       setPosts(userPosts)
       setStats({
         posts: userPosts.length,
-        followers: res.data.user.followers?.length || 0,
-        following: res.data.user.following?.length || 0
+        followers: userData.followers?.length || 0,
+        following: userData.following?.length || 0
       })
     }catch(err){ 
       console.error(err)
@@ -130,7 +141,28 @@ export default function Profile(){
                     try {
                       const res = await API.post(`/users/follow/${user._id}`)
                       if (res.data.success) {
-                        load() // Reload profile to update followers/following count
+                        // Update following state based on API response
+                        const newFollowingState = res.data.following;
+                        setIsFollowing(newFollowingState);
+                        
+                        // Update follower count based on the action
+                        const countChange = newFollowingState ? 1 : -1;
+                        setStats(prev => ({
+                          ...prev,
+                          followers: Math.max(0, prev.followers + countChange)
+                        }));
+
+                        // Update user object to reflect new follower state
+                        setUser(prev => {
+                          const updatedFollowers = newFollowingState
+                            ? [...(prev.followers || []), currentUser]
+                            : (prev.followers || []).filter(f => f._id !== currentUser._id);
+                          
+                          return {
+                            ...prev,
+                            followers: updatedFollowers
+                          };
+                        });
                       }
                     } catch (err) {
                       console.error(err)
@@ -140,14 +172,14 @@ export default function Profile(){
                   }}
                   disabled={followLoading}
                   className={`px-6 py-2 rounded-lg transition group relative ${
-                    stats.followers > 0 && user.followers?.some(f => f._id === currentUser._id)
+                    isFollowing
                       ? 'bg-gray-200 hover:bg-red-500 hover:text-white text-black'
                       : 'bg-blue-500 hover:bg-blue-600 text-white'
                   }`}
                 >
                   {followLoading 
                     ? 'Loading...' 
-                    : stats.followers > 0 && user.followers?.some(f => f._id === currentUser._id)
+                    : isFollowing
                       ? (
                         <>
                           <span className="block group-hover:hidden">Following</span>
