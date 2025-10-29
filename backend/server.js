@@ -19,17 +19,30 @@ const app = express();
 app.use(helmet());
 // Allow requests from the frontend and allow credentials (cookies)
 const FRONTEND_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173'
-app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+// Configure CORS for all routes
+app.use(cors({
+  origin: FRONTEND_ORIGIN,
+  credentials: true,
+  exposedHeaders: ['Cross-Origin-Resource-Policy']
+}));
+
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Configure static file serving with proper headers
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads';
-// Configure static file serving with CORS headers
 app.use('/' + UPLOAD_DIR, (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', FRONTEND_ORIGIN);
-  res.header('Access-Control-Allow-Methods', 'GET');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.set({
+    'Access-Control-Allow-Origin': FRONTEND_ORIGIN,
+    'Access-Control-Allow-Methods': 'GET',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Cross-Origin-Resource-Policy': 'cross-origin',
+    'Cross-Origin-Embedder-Policy': 'credentialless'
+  });
   next();
 }, express.static(path.join(__dirname, UPLOAD_DIR)));
 
