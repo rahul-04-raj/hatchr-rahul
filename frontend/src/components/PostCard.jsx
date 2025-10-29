@@ -1,24 +1,34 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import API from '../lib/api'
 import resolveMediaUrl from '../lib/media'
 import { useImage } from '../hooks/useImage'
 
 export default function PostCard({ post, onRefresh }){
+  const navigate = useNavigate()
   const [comment, setComment] = useState('')
   const [loadingLike, setLoadingLike] = useState(false)
   const { loaded: mediaLoaded, error: mediaError, imgSrc } = useImage(resolveMediaUrl(post.mediaUrl))
   const { loaded: avatarLoaded, imgSrc: avatarSrc } = useImage(post.user?.avatar || '/placeholder-avatar.png')
 
+  const goToProfile = (e) => {
+    e.preventDefault()
+    if (post.user?.username) {
+      navigate(`/profile/${post.user.username}`)
+    }
+  }
+
   return (
     <div className="bg-white rounded shadow mb-6">
       <div className="p-3 flex items-center">
         <img 
+          onClick={goToProfile}
           src={avatarSrc} 
-          className={`w-10 h-10 rounded-full mr-3 ${!avatarLoaded ? 'animate-pulse bg-gray-200' : ''}`}
+          className={`w-10 h-10 rounded-full mr-3 cursor-pointer ${!avatarLoaded ? 'animate-pulse bg-gray-200' : ''}`}
           alt={post.user?.username || 'avatar'}
         />
         <div className="flex-1">
-          <div className="font-semibold">{post.user?.username}</div>
+          <div onClick={goToProfile} className="font-semibold cursor-pointer hover:underline">{post.user?.username}</div>
           <div className="text-sm text-gray-600">{post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}</div>
         </div>
         <div className="text-gray-500">⋯</div>
@@ -52,7 +62,7 @@ export default function PostCard({ post, onRefresh }){
           <div className="text-sm text-gray-600">{post.likes?.length || 0} likes</div>
         </div>
 
-        <div className="mb-2"><span className="font-semibold">{post.user?.username}</span> {post.caption}</div>
+        <div className="mb-2"><span onClick={goToProfile} className="font-semibold cursor-pointer hover:underline">{post.user?.username}</span> {post.caption}</div>
 
         <div>
           {post.comments && post.comments.map((c, idx) => (

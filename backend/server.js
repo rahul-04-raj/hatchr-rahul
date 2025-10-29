@@ -24,7 +24,14 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads';
-app.use('/' + UPLOAD_DIR, express.static(path.join(__dirname, UPLOAD_DIR)));
+// Configure static file serving with CORS headers
+app.use('/' + UPLOAD_DIR, (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', FRONTEND_ORIGIN);
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, UPLOAD_DIR)));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
