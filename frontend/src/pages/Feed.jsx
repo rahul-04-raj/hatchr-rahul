@@ -21,13 +21,6 @@ export default function Feed() {
     } finally { setLoading(false) }
   }
 
-  async function onLike(postId) {
-    try {
-      await API.post(`/posts/${postId}/like`)
-      setPosts(prev => prev.map(p => p._id === postId ? { ...p, likesCount: undefined } : p))
-      load()
-    } catch (err) { console.error(err) }
-  }
 
   async function onComment(postId, text) {
     try {

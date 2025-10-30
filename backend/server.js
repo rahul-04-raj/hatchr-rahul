@@ -11,7 +11,7 @@ const morgan = require('morgan');
 const authRoutes = require('./routes/auth');
 const postRoutes = require('./routes/posts');
 const userRoutes = require('./routes/users');
-const storyRoutes = require('./routes/stories');
+const projectRoutes = require('./routes/projects');
 const chatRoutes = require('./routes/chats');
 const messageRoutes = require('./routes/messages');
 
@@ -48,15 +48,15 @@ app.use('/' + UPLOAD_DIR, (req, res, next) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/projects', projectRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/stories', storyRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);
 
 const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: FRONTEND_ORIGIN, methods: ['GET','POST'], credentials: true } });
+const io = new Server(server, { cors: { origin: FRONTEND_ORIGIN, methods: ['GET', 'POST'], credentials: true } });
 
 // simple map of userId -> socket.id (supports single socket per user for simplicity)
 const userSockets = new Map();
@@ -64,15 +64,15 @@ const userSockets = new Map();
 io.on('connection', (socket) => {
   // client should emit 'register' with their userId after connecting
   socket.on('register', (userId) => {
-    try{
+    try {
       userSockets.set(userId, socket.id);
       socket.join(userId); // join room for direct messages/notifications
-    }catch(e){ console.error(e) }
+    } catch (e) { console.error(e) }
   });
 
   socket.on('disconnect', () => {
     // remove mapping if exists
-    for (const [userId, sid] of userSockets.entries()){
+    for (const [userId, sid] of userSockets.entries()) {
       if (sid === socket.id) userSockets.delete(userId)
     }
   });

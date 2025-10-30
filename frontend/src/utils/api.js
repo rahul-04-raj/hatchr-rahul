@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const API = axios.create({ baseURL: 'http://localhost:5000/api' })
+const API = axios.create({
+  baseURL: 'http://localhost:5000/api',
+  withCredentials: true // Enable cookie-based auth
+})
 
 API.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
