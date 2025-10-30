@@ -1,67 +1,64 @@
 import React, { useEffect, useState } from 'react'
 import API from '../lib/api'
 import PostCard from '../components/PostCard'
-import StoryBar from '../components/StoryBar'
 import PostModal from '../components/PostModal'
 
-export default function Feed(){
+export default function Feed() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(()=>{
+  useEffect(() => {
     load()
-  },[])
+  }, [])
 
-  async function load(){
+  async function load() {
     setLoading(true)
-    try{
+    try {
       const res = await API.get('/posts')
       setPosts(res.data.posts || [])
-    }catch(err){
+    } catch (err) {
       console.error(err)
-    }finally{ setLoading(false) }
+    } finally { setLoading(false) }
   }
 
-  async function onLike(postId){
-    try{
+  async function onLike(postId) {
+    try {
       await API.post(`/posts/${postId}/like`)
       setPosts(prev => prev.map(p => p._id === postId ? { ...p, likesCount: undefined } : p))
       load()
-    }catch(err){ console.error(err) }
+    } catch (err) { console.error(err) }
   }
 
-  async function onComment(postId, text){
-    try{
+  async function onComment(postId, text) {
+    try {
       await API.post(`/posts/${postId}/comment`, { text })
       load()
-    }catch(err){ console.error(err) }
+    } catch (err) { console.error(err) }
   }
 
   const [showModal, setShowModal] = useState(false)
   const [file, setFile] = useState(null)
   const [caption, setCaption] = useState('')
 
-  async function createPost(e){
+  async function createPost(e) {
     e.preventDefault()
     if (!file) return
     const fd = new FormData()
     fd.append('media', file)
     fd.append('caption', caption)
-    try{
+    try {
       await API.post('/posts', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       setFile(null); setCaption('')
       load()
-    }catch(err){ console.error(err) }
+    } catch (err) { console.error(err) }
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2">
-          <StoryBar />
-
           <div className="mb-4 flex justify-end">
-            <button onClick={() => setShowModal(true)} className="px-3 py-1 bg-blue-500 text-white rounded">Create Post</button>
+            <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Create Post</button>
             {showModal && <PostModal onPosted={load} onClose={() => setShowModal(false)} />}
           </div>
 

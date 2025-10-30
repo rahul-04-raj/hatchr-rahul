@@ -3,18 +3,18 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/useAuth'
 import { useTheme } from '../store/useTheme'
 
-export default function Navbar(){
+export default function Navbar() {
   const user = useAuth(state => state.user)
   const logout = useAuth(state => state.logout)
   const toggle = useTheme(state => state.toggle)
   const nav = useNavigate()
 
-  function doLogout(){ logout(); nav('/login') }
+  function doLogout() { logout(); nav('/login') }
 
   return (
     <div className="bg-white shadow">
       <div className="max-w-3xl mx-auto flex items-center justify-between p-3">
-        <Link to="/feed" className="text-2xl font-bold">InstaClone</Link>
+        <Link to="/feed" className="text-2xl font-bold">Hatchr</Link>
         <div className="flex items-center gap-3">
           {user ? (
             <>
