@@ -1,17 +1,97 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../store/useAuth';
+import API from '../lib/api';
 
-export default function ProjectGrid({ projects }) {
+export default function ProjectGrid({ projects, onRefresh }) {
     const navigate = useNavigate();
+    const currentUser = useAuth(state => state.user);
+    const [menuOpen, setMenuOpen] = useState(null);
+    const menuRef = useRef(null);
+    const [loadingDelete, setLoadingDelete] = useState(false);
+
+    // Handle click outside for menu
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setMenuOpen(null);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [menuRef]);
+
+    const handleProjectClick = (e, projectId) => {
+        if (e.target.closest('.project-menu')) {
+            e.stopPropagation();
+            return;
+        }
+        navigate(`/project/${projectId}`);
+    };
+
+    const handleDeleteProject = async (projectId) => {
+        if (!window.confirm('Are you sure you want to delete this project?')) return;
+
+        try {
+            setLoadingDelete(true);
+            await API.delete(`/projects/${projectId}`);
+            setMenuOpen(null);
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            console.error('Error deleting project:', err);
+            alert('Failed to delete project');
+        } finally {
+            setLoadingDelete(false);
+        }
+    };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map(project => (
                 <div
                     key={project._id}
-                    onClick={() => navigate(`/project/${project._id}`)}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={(e) => handleProjectClick(e, project._id)}
+                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer relative"
                 >
+                    {/* Three Dot Menu */}
+                    {currentUser && project.user._id === currentUser._id && (
+                        <div className="absolute top-2 right-2 z-10 project-menu">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMenuOpen(menuOpen === project._id ? null : project._id);
+                                }}
+                                className="p-1 hover:bg-black/10 rounded-full transition-colors"
+                            >
+                                <svg className="w-6 h-6 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                </svg>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {menuOpen === project._id && (
+                                <div
+                                    ref={menuRef}
+                                    className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-50 py-1"
+                                >
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteProject(project._id);
+                                        }}
+                                        disabled={loadingDelete}
+                                        className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        {loadingDelete ? 'Deleting...' : 'Delete Project'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Project Cover Image */}
                     <div className="aspect-video bg-gray-100 relative">
                         {project.coverImage ? (

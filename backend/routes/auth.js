@@ -19,8 +19,8 @@ router.post('/signup', async (req, res) => {
     const user = new User({ name, username, email, password: hashed });
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' });
-    res.json({ success: true, user: { id: user._id, name: user.name, username: user.username, email: user.email, avatar: user.avatar }, token });
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' });
+    res.json({ success: true, user: { _id: user._id, name: user.name, username: user.username, email: user.email, avatar: user.avatar }, token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -39,8 +39,8 @@ router.post('/login', async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ success: false, message: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' });
-    res.json({ success: true, user: { id: user._id, name: user.name, username: user.username, email: user.email, avatar: user.avatar }, token });
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' });
+    res.json({ success: true, user: { _id: user._id, name: user.name, username: user.username, email: user.email, avatar: user.avatar }, token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -49,12 +49,14 @@ router.post('/login', async (req, res) => {
 
 // GET /api/auth/me - get current user
 router.get('/me', auth, async (req, res) => {
-  try{
-    const user = await User.findById(req.userId).select('-password')
-    if (!user) return res.status(404).json({ success:false, message:'User not found' })
-    res.json({ success:true, user })
-  }catch(err){ console.error(err); res.status(500).json({ success:false, message:'Server error' }) }
-})
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, user: { _id: user._id, name: user.name, username: user.username, email: user.email, avatar: user.avatar } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 module.exports = router;
-

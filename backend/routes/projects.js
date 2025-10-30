@@ -148,10 +148,12 @@ router.delete('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Project not found or unauthorized' });
         }
 
-        // Delete all posts associated with this project
+        // Delete all posts associated with this project first
         await Post.deleteMany({ project: project._id });
 
-        await project.remove();
+        // Use deleteOne instead of remove
+        await Project.deleteOne({ _id: project._id });
+
         res.json({ message: 'Project deleted successfully' });
     } catch (error) {
         console.error('Error deleting project:', error);

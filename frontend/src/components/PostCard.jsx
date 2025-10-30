@@ -149,7 +149,8 @@ export default function PostCard({ post, onRefresh }) {
               {post.type.charAt(0).toUpperCase() + post.type.slice(1)} in {post.project.title}
             </button>
           )}
-        </div>                <div className="relative">
+        </div>
+        <div className="relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -164,7 +165,7 @@ export default function PostCard({ post, onRefresh }) {
               ref={menuRef}
               className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-10"
             >
-              {currentUser && post.user && currentUser._id === post.user._id && (
+              {currentUser && post.user && currentUser._id?.toString() === post.user._id?.toString() && (
                 <button
                   onClick={handleDelete}
                   disabled={loadingDelete}

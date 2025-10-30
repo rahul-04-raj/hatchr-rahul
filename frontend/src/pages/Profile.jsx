@@ -76,7 +76,7 @@ export default function Profile() {
             No projects yet
           </div>
         ) : (
-          <ProjectGrid projects={projects} />
+          <ProjectGrid projects={projects} onRefresh={loadProfile} />
         )}
       </div>
 
