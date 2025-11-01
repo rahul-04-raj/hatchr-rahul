@@ -21,7 +21,7 @@ router.get('/:username', async (req, res) => {
   }
 });
 
-// POST /api/users/follow/:id - toggle follow/unfollow
+// POST /api/users/follow/:id - follow a user
 router.post('/follow/:id', auth, async (req, res) => {
   try {
     const targetId = req.params.id;
@@ -33,20 +33,80 @@ router.post('/follow/:id', auth, async (req, res) => {
 
     const isFollowing = me.following.some(f => f.toString() === targetId);
     if (isFollowing) {
-      me.following = me.following.filter(f => f.toString() !== targetId);
-      target.followers = target.followers.filter(f => f.toString() !== req.userId);
-    } else {
-      me.following.push(targetId);
-      target.followers.push(req.userId);
+      return res.status(400).json({ success: false, message: 'Already following this user' });
     }
+
+    me.following.push(targetId);
+    target.followers.push(req.userId);
     await me.save();
     await target.save();
+
     // notify target user about follow
     try {
       const io = req.app.get('io')
-      if (io && targetId !== req.userId) io.to(targetId).emit('notification', { type: isFollowing ? 'unfollow' : 'follow', from: req.userId })
+      if (io && targetId !== req.userId) io.to(targetId).emit('notification', { type: 'follow', from: req.userId })
     } catch (e) { }
-    res.json({ success: true, following: !isFollowing });
+
+    res.json({ success: true, following: true, followersCount: target.followers.length, followingCount: me.following.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/users/unfollow/:id - unfollow a user
+router.post('/unfollow/:id', auth, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    if (req.userId === targetId) return res.status(400).json({ success: false, message: 'Cannot unfollow yourself' });
+
+    const me = await User.findById(req.userId);
+    const target = await User.findById(targetId);
+    if (!me || !target) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const isFollowing = me.following.some(f => f.toString() === targetId);
+    if (!isFollowing) {
+      return res.status(400).json({ success: false, message: 'Not following this user' });
+    }
+
+    me.following = me.following.filter(f => f.toString() !== targetId);
+    target.followers = target.followers.filter(f => f.toString() !== req.userId);
+    await me.save();
+    await target.save();
+
+    res.json({ success: true, following: false, followersCount: target.followers.length, followingCount: me.following.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// GET /api/users/:userId/followers - get followers list
+router.get('/:userId/followers', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .populate('followers', 'username name avatar bio')
+      .select('followers');
+
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, followers: user.followers });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// GET /api/users/:userId/following - get following list
+router.get('/:userId/following', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .populate('following', 'username name avatar bio')
+      .select('following');
+
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, following: user.following });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error' });
