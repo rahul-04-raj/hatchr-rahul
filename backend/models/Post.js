@@ -1,9 +1,18 @@
 const mongoose = require('mongoose');
 
+const MediaSchema = new mongoose.Schema({
+  url: { type: String, required: true },
+  type: { type: String, enum: ['image', 'video'], required: true },
+  contentType: { type: String }, // Store mime type (image/jpeg, video/mp4, etc.)
+  order: { type: Number, default: 0 } // Order of media in the carousel
+}, { _id: false });
+
 const PostSchema = new mongoose.Schema({
   caption: { type: String, default: '' },
-  mediaUrl: { type: String, required: true },
-  contentType: { type: String }, // Store mime type of the media
+  media: [MediaSchema], // Array of media items (supports up to 10)
+  // Keep old field for backward compatibility
+  mediaUrl: { type: String },
+  contentType: { type: String },
   project: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',

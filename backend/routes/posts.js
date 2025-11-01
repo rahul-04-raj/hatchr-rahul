@@ -52,46 +52,68 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new post
-router.post('/', auth, upload.single('media'), async (req, res) => {
+router.post('/', auth, upload.array('media', 10), async (req, res) => {
   try {
     const { caption, projectId } = req.body;
 
-    if (!req.file) {
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Media file is required'
+        message: 'At least one media file is required'
       });
     }
 
-    let mediaUrl;
-    try {
-      const result = await uploadToCloudinary(req.file.buffer);
-      mediaUrl = result.secure_url;
-    } catch (err) {
-      console.error('Cloudinary upload failed:', err);
-      // Fallback to local storage
+    if (req.files.length > 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 10 media files allowed'
+      });
+    }
+
+    // Upload all media files
+    const mediaArray = [];
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
+      let mediaUrl;
+
       try {
-        ensureUploadDir();
-        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const filename = unique + path.extname(req.file.originalname || '.jpg');
-        const filepath = path.join(__dirname, '..', UPLOAD_DIR, filename);
-        fs.writeFileSync(filepath, req.file.buffer);
-        mediaUrl = `/${UPLOAD_DIR}/${filename}`;
-      } catch (err2) {
-        console.error('Local save failed:', err2);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to save media'
-        });
+        const result = await uploadToCloudinary(file.buffer);
+        mediaUrl = result.secure_url;
+      } catch (err) {
+        console.error('Cloudinary upload failed:', err);
+        // Fallback to local storage
+        try {
+          ensureUploadDir();
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const filename = unique + path.extname(file.originalname || '.jpg');
+          const filepath = path.join(__dirname, '..', UPLOAD_DIR, filename);
+          fs.writeFileSync(filepath, file.buffer);
+          mediaUrl = `/${UPLOAD_DIR}/${filename}`;
+        } catch (err2) {
+          console.error('Local save failed:', err2);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to save media'
+          });
+        }
       }
+
+      mediaArray.push({
+        url: mediaUrl,
+        type: file.mimetype.startsWith('video/') ? 'video' : 'image',
+        contentType: file.mimetype,
+        order: i
+      });
     }
 
     const post = new Post({
       caption,
-      mediaUrl,
+      media: mediaArray,
+      // Backward compatibility - use first media item
+      mediaUrl: mediaArray[0].url,
+      contentType: mediaArray[0].contentType,
       user: req.userId,
-      project: projectId,
-      contentType: req.file.mimetype
+      project: projectId
     });
 
     await post.save();

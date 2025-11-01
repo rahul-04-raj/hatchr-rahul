@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import API from '../lib/api'
-import ImageUpload from './ImageUpload'
+import MultiMediaUpload from './MultiMediaUpload'
 import ProjectModal from './ProjectModal'
 
 const postTypes = ['update', 'announcement', 'milestone'];
 
 export default function PostModal({ onClose, onPosted }) {
-  const [file, setFile] = useState(null)
+  const [files, setFiles] = useState([])
   const [caption, setCaption] = useState('')
   const [loading, setLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -36,29 +36,42 @@ export default function PostModal({ onClose, onPosted }) {
 
   async function submit(e) {
     e.preventDefault()
-    if (!file) return
+    if (!files || files.length === 0) {
+      alert('Please select at least one media file')
+      return
+    }
     setLoading(true)
     setUploadProgress(0)
 
     if (!selectedProject) {
       alert('Please select or create a project first')
+      setLoading(false)
       return
     }
 
     const fd = new FormData()
-    fd.append('media', file)
+    // Append all files
+    files.forEach(file => {
+      fd.append('media', file)
+    })
     fd.append('caption', caption)
     fd.append('projectId', selectedProject)
     fd.append('type', postType)
 
     try {
-      await API.post('/posts', fd, {
+      const response = await API.post('/posts', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           const progress = (progressEvent.loaded / progressEvent.total) * 100
           setUploadProgress(Math.round(progress))
         }
       })
+
+      // Show points notification if available
+      if (response.data.pointsAwarded) {
+        console.log(`+${response.data.pointsAwarded} Hatch Points!`)
+      }
+
       onPosted && onPosted()
       onClose()
     } catch (err) {
@@ -141,12 +154,12 @@ export default function PostModal({ onClose, onPosted }) {
               </div>
             )}
 
-            <ImageUpload
-              onFileSelect={setFile}
-              className="mb-4"
+            <MultiMediaUpload
+              onFilesSelect={setFiles}
+              maxFiles={10}
             />
 
-            <div className="mb-4">
+            <div className="mb-4 mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Post Type
               </label>
@@ -196,7 +209,7 @@ export default function PostModal({ onClose, onPosted }) {
               <button
                 type="submit"
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md disabled:opacity-50"
-                disabled={loading || !file}
+                disabled={loading || files.length === 0}
               >
                 {loading ? 'Posting...' : 'Share'}
               </button>

@@ -8,6 +8,20 @@ const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
   // Accept images and videos only
   if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    // Check file size based on type
+    if (file.mimetype.startsWith('video/')) {
+      // 100MB limit for videos
+      if (file.size > 100 * 1024 * 1024) {
+        cb(new Error('Video file too large! Maximum size is 100MB.'), false);
+        return;
+      }
+    } else {
+      // 10MB limit for images
+      if (file.size > 10 * 1024 * 1024) {
+        cb(new Error('Image file too large! Maximum size is 10MB.'), false);
+        return;
+      }
+    }
     cb(null, true);
   } else {
     cb(new Error('Not an image or video! Please upload only images or videos.'), false);
@@ -16,8 +30,7 @@ const fileFilter = (req, file, cb) => {
 
 // Configure upload limits
 const limits = {
-  fileSize: 10 * 1024 * 1024, // 10MB limit
-  files: 1 // Maximum one file
+  files: 10 // Maximum 10 files per upload
 };
 
 // Create multer instance with configuration

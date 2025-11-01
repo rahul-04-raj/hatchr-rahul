@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import API from '../lib/api'
-import resolveMediaUrl from '../lib/media'
 import { useImage } from '../hooks/useImage'
 import { useAuth } from '../store/useAuth'
+import MediaCarousel from './MediaCarousel'
 
 export default function PostCard({ post, onRefresh }) {
   const navigate = useNavigate()
@@ -31,7 +31,6 @@ export default function PostCard({ post, onRefresh }) {
     });
   }, [post.upvotes, post.downvotes, currentUser])
 
-  const { loaded: mediaLoaded, error: mediaError, imgSrc } = useImage(resolveMediaUrl(post.mediaUrl))
   const { loaded: avatarLoaded, imgSrc: avatarSrc } = useImage(post.user?.avatar || '/placeholder-avatar.png')
 
   // Handle click outside for menu
@@ -192,21 +191,8 @@ export default function PostCard({ post, onRefresh }) {
         </div>
       </div>
 
-      <div className="relative bg-black aspect-[4/3]">
-        {!mediaLoaded && !mediaError && (
-          <div className="absolute inset-0 bg-gray-100 animate-pulse" />
-        )}
-        {mediaError && (
-          <div className="absolute inset-0 bg-gray-100 flex items-center justify-center text-gray-400">
-            Unable to load image
-          </div>
-        )}
-        <img
-          src={imgSrc}
-          alt={post.caption || 'post'}
-          className={`w-full h-full object-contain ${!mediaLoaded ? 'opacity-0' : ''}`}
-        />
-      </div>
+      {/* Media Display */}
+      <MediaCarousel media={post.media && post.media.length > 0 ? post.media : post.mediaUrl} />
 
       <div className="p-4">
         <div className="flex items-center justify-between">
