@@ -21,11 +21,17 @@ const UserSchema = new mongoose.Schema({
     expiresAt: { type: Date, default: null }
   },
   isEmailVerified: { type: Boolean, default: false },
+  // Password reset fields
+  resetPasswordOtp: {
+    code: { type: String, default: null },
+    expiresAt: { type: Date, default: null }
+  },
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 // TTL index - auto-delete expired OTPs
 UserSchema.index({ 'otp.expiresAt': 1 }, { expireAfterSeconds: 0 });
+UserSchema.index({ 'resetPasswordOtp.expiresAt': 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('User', UserSchema);

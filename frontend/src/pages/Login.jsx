@@ -59,6 +59,13 @@ export default function Login() {
       <form onSubmit={submit}>
         <input className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Email or username" value={emailOrUsername} onChange={e => setEmailOrUsername(e.target.value)} required />
         <input className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+
+        <div className="text-right mb-3">
+          <a className="text-sm text-blue-600 dark:text-blue-400 hover:underline" href="/forgot-password">
+            Forgot password?
+          </a>
+        </div>
+
         <button className="w-full bg-blue-500 hover:bg-blue-600 text-white p-2 rounded">Log in</button>
       </form>
       <div className="mt-4 text-sm text-center text-gray-600 dark:text-gray-400">
