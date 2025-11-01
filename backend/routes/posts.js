@@ -9,6 +9,7 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const Comment = require('../models/Comment');
 const Project = require('../models/Project');
+const { awardPoints } = require('../utils/points');
 
 // Local upload directory for fallback
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads';
@@ -107,6 +108,14 @@ router.post('/', auth, upload.single('media'), async (req, res) => {
     await post.populate('user', 'username name avatar');
     await post.populate('project');
 
+    // Award points for creating a post
+    const pointsAwarded = await awardPoints(
+      req.userId,
+      'post_created',
+      post._id,
+      'Post'
+    );
+
     res.status(201).json({
       success: true,
       post: {
@@ -115,7 +124,9 @@ router.post('/', auth, upload.single('media'), async (req, res) => {
         hasDownvoted: false,
         upvoteCount: 0,
         downvoteCount: 0
-      }
+      },
+      pointsAwarded: pointsAwarded.points,
+      totalPoints: pointsAwarded.total
     });
   } catch (err) {
     console.error('Post creation error:', err);
@@ -157,9 +168,19 @@ router.post('/:id/comment', auth, async (req, res) => {
     post.comments.push(comment._id);
     await post.save();
 
+    // Award points for making a comment
+    const pointsAwarded = await awardPoints(
+      req.userId,
+      'comment_made',
+      comment._id,
+      'Comment'
+    );
+
     res.json({
       success: true,
-      comment
+      comment,
+      pointsAwarded: pointsAwarded.points,
+      totalPoints: pointsAwarded.total
     });
   } catch (err) {
     console.error(err);
@@ -196,12 +217,27 @@ router.post('/:id/upvote', auth, async (req, res) => {
     }
 
     await post.save();
+
+    // Award points to the post creator for receiving an upvote
+    // Only award points if this is a new upvote (not removing an upvote)
+    let pointsAwarded = null;
+    if (!hasUpvoted) {
+      pointsAwarded = await awardPoints(
+        post.user.toString(),
+        'received_upvote',
+        post._id,
+        'Post'
+      );
+    }
+
     res.json({
       success: true,
       upvotes: post.upvotes.length,
       downvotes: post.downvotes.length,
       hasUpvoted: !hasUpvoted,
-      hasDownvoted: false
+      hasDownvoted: false,
+      pointsAwarded: pointsAwarded ? pointsAwarded.points : 0,
+      totalPoints: pointsAwarded ? pointsAwarded.total : null
     });
   } catch (err) {
     console.error(err);

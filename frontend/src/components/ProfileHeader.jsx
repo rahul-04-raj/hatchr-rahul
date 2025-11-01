@@ -46,6 +46,10 @@ export default function ProfileHeader({ user, onEditClick }) {
                             <div className="font-semibold">{user.following?.length || 0}</div>
                             <div className="text-gray-500 text-sm">Following</div>
                         </div>
+                        <div className="text-center bg-yellow-100 px-4 py-2 rounded-lg">
+                            <div className="font-semibold text-yellow-700">{user.hatchPoints || 0}</div>
+                            <div className="text-yellow-600 text-sm">Hatch Points</div>
+                        </div>
                     </div>
                 </div>
 

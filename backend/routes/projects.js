@@ -6,6 +6,7 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const upload = require('../config/multer');
 const { uploadToCloudinary } = require('../config/cloudinary');
+const { awardPoints } = require('../utils/points');
 
 // Create a new project
 router.post('/', auth, upload.single('coverImage'), async (req, res) => {
@@ -28,7 +29,20 @@ router.post('/', auth, upload.single('coverImage'), async (req, res) => {
         });
 
         await project.save();
-        res.status(201).json(project);
+
+        // Award points for creating a project
+        const pointsAwarded = await awardPoints(
+            req.user._id || req.userId,
+            'project_created',
+            project._id,
+            'Project'
+        );
+
+        res.status(201).json({
+            project,
+            pointsAwarded: pointsAwarded.points,
+            totalPoints: pointsAwarded.total
+        });
     } catch (error) {
         console.error('Error creating project:', error);
         res.status(500).json({ message: 'Failed to create project' });
