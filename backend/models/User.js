@@ -15,8 +15,17 @@ const UserSchema = new mongoose.Schema({
     reference: { type: mongoose.Schema.Types.ObjectId, refPath: 'pointsHistory.referenceModel' },
     referenceModel: { type: String, enum: ['Project', 'Post', 'Comment'] }
   }],
+  // OTP verification fields
+  otp: {
+    code: { type: String, default: null },
+    expiresAt: { type: Date, default: null }
+  },
+  isEmailVerified: { type: Boolean, default: false },
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
+
+// TTL index - auto-delete expired OTPs
+UserSchema.index({ 'otp.expiresAt': 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('User', UserSchema);

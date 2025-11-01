@@ -18,7 +18,7 @@ const messageRoutes = require('./routes/messages');
 const app = express();
 app.use(helmet());
 // Allow requests from the frontend and allow credentials (cookies)
-const FRONTEND_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173'
+const FRONTEND_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173';
 // Configure CORS for all routes
 app.use(cors({
   origin: FRONTEND_ORIGIN,
