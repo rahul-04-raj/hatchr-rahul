@@ -78,7 +78,7 @@ export default function PostView() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
           <p className="mt-2 text-gray-600">Loading post...</p>
@@ -89,7 +89,7 @@ export default function PostView() {
 
   if (!post) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="text-center">
           <p className="text-gray-600">Post not found</p>
           <button onClick={() => navigate('/feed')} className="mt-4 text-blue-500 hover:underline">
@@ -101,7 +101,7 @@ export default function PostView() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-2xl mx-auto px-4 py-8">
       <button onClick={() => navigate(-1)} className="mb-4 text-blue-500 hover:underline flex items-center gap-1">
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
