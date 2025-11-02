@@ -18,6 +18,81 @@ const ensureUploadDir = () => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 };
 
+// Search posts
+router.get('/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ message: 'Search query parameter required' });
+    }
+
+    const userId = req.user?._id || req.userId;
+    const posts = await Post.find({
+      $or: [
+        { title: { $regex: q, $options: 'i' } },
+        { caption: { $regex: q, $options: 'i' } }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean()
+      .populate('user', 'username name avatar')
+      .populate('project', 'title')
+      .populate({
+        path: 'comments',
+        populate: { path: 'user', select: 'username name avatar' }
+      });
+
+    // Process each post to add vote status
+    const processedPosts = posts.map(post => ({
+      ...post,
+      hasUpvoted: userId ? post.upvotes.some(id => String(id) === String(userId)) : false,
+      hasDownvoted: userId ? post.downvotes.some(id => String(id) === String(userId)) : false,
+      upvoteCount: post.upvotes.length,
+      downvoteCount: post.downvotes.length
+    }));
+
+    res.json(processedPosts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to search posts' });
+  }
+});
+
+// GET /api/posts/:id - get single post
+router.get('/:id', async (req, res) => {
+  try {
+    const userId = req.user?._id || req.userId;
+    const post = await Post.findById(req.params.id)
+      .lean()
+      .populate('user', 'username name avatar')
+      .populate('project', 'title')
+      .populate({
+        path: 'comments',
+        populate: { path: 'user', select: 'username name avatar' },
+        options: { sort: { createdAt: 1 } }
+      });
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    const processedPost = {
+      ...post,
+      hasUpvoted: userId ? post.upvotes.some(id => String(id) === String(userId)) : false,
+      hasDownvoted: userId ? post.downvotes.some(id => String(id) === String(userId)) : false,
+      upvoteCount: post.upvotes.length,
+      downvoteCount: post.downvotes.length
+    };
+
+    res.json({ success: true, post: processedPost });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // GET /api/posts - list recent posts
 router.get('/', async (req, res) => {
   try {
@@ -54,7 +129,14 @@ router.get('/', async (req, res) => {
 // Create a new post
 router.post('/', auth, upload.array('media', 10), async (req, res) => {
   try {
-    const { caption, projectId } = req.body;
+    const { title, caption, projectId } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title is required'
+      });
+    }
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -107,6 +189,7 @@ router.post('/', auth, upload.array('media', 10), async (req, res) => {
     }
 
     const post = new Post({
+      title: title.trim(),
       caption,
       media: mediaArray,
       // Backward compatibility - use first media item

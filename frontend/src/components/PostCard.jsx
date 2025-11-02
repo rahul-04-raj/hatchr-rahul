@@ -13,7 +13,9 @@ export default function PostCard({ post, onRefresh }) {
   const [showMenu, setShowMenu] = useState(false)
   const [loadingVote, setLoadingVote] = useState(false)
   const [loadingDelete, setLoadingDelete] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 })
   const menuRef = useRef(null)
+  const buttonRef = useRef(null)
   const [voteStats, setVoteStats] = useState({
     upvotes: post.upvotes?.length || 0,
     downvotes: post.downvotes?.length || 0,
@@ -36,13 +38,26 @@ export default function PostCard({ post, onRefresh }) {
   // Handle click outside for menu
   useEffect(() => {
     function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (menuRef.current && !menuRef.current.contains(event.target) && 
+          buttonRef.current && !buttonRef.current.contains(event.target)) {
         setShowMenu(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [menuRef])
+
+  // Calculate menu position when showing
+  const handleMenuToggle = () => {
+    if (!showMenu && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setMenuPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right
+      })
+    }
+    setShowMenu(!showMenu)
+  }
 
   const goToProfile = (e) => {
     e.preventDefault()
@@ -118,8 +133,24 @@ export default function PostCard({ post, onRefresh }) {
     }
   }
 
+  const handlePostClick = (e) => {
+    // Don't navigate if clicking on interactive elements
+    if (
+      e.target.closest('button') ||
+      e.target.closest('a') ||
+      e.target.closest('input') ||
+      e.target.closest('form')
+    ) {
+      return;
+    }
+    navigate(`/post/${post._id}`);
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow mb-6">
+    <div 
+      className="bg-white rounded-lg shadow mb-6 cursor-pointer hover:shadow-lg transition-shadow relative"
+      onClick={handlePostClick}
+    >
       <div className="p-4 flex items-center">
         <img
           onClick={goToProfile}
@@ -149,9 +180,10 @@ export default function PostCard({ post, onRefresh }) {
             </button>
           )}
         </div>
-        <div className="relative">
+        <div>
           <button
-            onClick={() => setShowMenu(!showMenu)}
+            ref={buttonRef}
+            onClick={handleMenuToggle}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -162,7 +194,13 @@ export default function PostCard({ post, onRefresh }) {
           {showMenu && (
             <div
               ref={menuRef}
-              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-10"
+              style={{ 
+                position: 'fixed', 
+                top: `${menuPosition.top}px`, 
+                right: `${menuPosition.right}px`,
+                zIndex: 9999 
+              }}
+              className="w-48 bg-white rounded-lg shadow-xl border py-1"
             >
               {currentUser && post.user && currentUser._id?.toString() === post.user._id?.toString() && (
                 <button
@@ -190,6 +228,13 @@ export default function PostCard({ post, onRefresh }) {
           )}
         </div>
       </div>
+
+      {/* Title */}
+      {post.title && (
+        <div className="px-4 pt-2">
+          <h2 className="text-xl font-bold text-gray-900">{post.title}</h2>
+        </div>
+      )}
 
       {/* Media Display */}
       <MediaCarousel media={post.media && post.media.length > 0 ? post.media : post.mediaUrl} />
@@ -226,12 +271,13 @@ export default function PostCard({ post, onRefresh }) {
 
             <button
               onClick={() => setShowComments(!showComments)}
-              className={`p-2 rounded-md transition-colors ${showComments ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}`}
+              className={`p-2 rounded-md transition-colors flex items-center gap-1 ${showComments ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}`}
               aria-label="Toggle comments"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
+              <span className="text-sm">{post.comments?.length || 0}</span>
             </button>
 
             <button
@@ -250,7 +296,116 @@ export default function PostCard({ post, onRefresh }) {
           <span onClick={goToProfile} className="font-semibold cursor-pointer hover:underline">
             {post.user?.username}
           </span>{' '}
-          {post.caption}
+          {post.caption && (() => {
+            try {
+              // Debug log to see what we're receiving
+              if (post.caption === '[object Object]' || typeof post.caption === 'object') {
+                console.log('PostCard received object caption:', post.caption, 'for post:', post._id);
+              }
+              
+              // Handle different caption formats
+              let captionData;
+              if (typeof post.caption === 'string') {
+                // Check if it's the literal string "[object Object]"
+                if (post.caption === '[object Object]' || post.caption === 'null' || post.caption === 'undefined') {
+                  return <span className="line-clamp-1 text-gray-400 italic">[No content]</span>;
+                }
+                
+                try {
+                  captionData = JSON.parse(post.caption);
+                } catch (parseError) {
+                  // If it's not JSON, treat as plain text (old markdown posts)
+                  return (
+                    <>
+                      <span className="line-clamp-1">{post.caption.split('\n')[0]}</span>
+                      {(post.caption.includes('\n') || post.caption.length > 100) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/post/${post._id}`);
+                          }}
+                          className="text-gray-500 text-sm ml-2 hover:text-gray-700"
+                        >
+                          ...more
+                        </button>
+                      )}
+                    </>
+                  );
+                }
+              } else if (typeof post.caption === 'object') {
+                // Already an object
+                captionData = post.caption;
+              } else {
+                return <span className="line-clamp-1 text-gray-400 italic">[No content]</span>;
+              }
+              
+              // Check if it's valid Editor.js format
+              if (!captionData?.blocks || !Array.isArray(captionData.blocks)) {
+                console.warn('Invalid Editor.js format:', captionData);
+                return <span className="line-clamp-1 text-gray-400 italic">[No content]</span>;
+              }
+              
+              // Handle empty blocks array
+              if (captionData.blocks.length === 0) {
+                return <span className="line-clamp-1 text-gray-400 italic">[Empty content]</span>;
+              }
+              
+              const firstBlock = captionData.blocks[0];
+              if (!firstBlock || !firstBlock.data) {
+                return <span className="line-clamp-1 text-gray-400 italic">[No content]</span>;
+              }
+              
+              let previewText = '';
+              if (firstBlock.type === 'paragraph' || firstBlock.type === 'header') {
+                previewText = firstBlock.data?.text?.replace(/<[^>]*>/g, '') || '';
+              } else if (firstBlock.type === 'list') {
+                // Handle both old and new list formats
+                const firstItem = firstBlock.data?.items?.[0];
+                if (typeof firstItem === 'string') {
+                  previewText = firstItem.replace(/<[^>]*>/g, '');
+                } else if (typeof firstItem === 'object' && firstItem?.content) {
+                  previewText = firstItem.content.replace(/<[^>]*>/g, '');
+                } else {
+                  previewText = '[List]';
+                }
+              } else if (firstBlock.type === 'quote') {
+                previewText = firstBlock.data?.text?.replace(/<[^>]*>/g, '') || '';
+              } else if (firstBlock.type === 'code') {
+                previewText = '[Code block]';
+              } else if (firstBlock.type === 'delimiter') {
+                previewText = '* * *';
+              } else if (firstBlock.type === 'embed') {
+                previewText = '[Embedded content]';
+              } else {
+                previewText = '[Content]';
+              }
+              
+              // If preview text is empty, show placeholder
+              if (!previewText || previewText.trim() === '') {
+                return <span className="line-clamp-1 text-gray-400 italic">[Empty content]</span>;
+              }
+              
+              return (
+                <>
+                  <span className="line-clamp-1">{previewText}</span>
+                  {(captionData.blocks.length > 1 || previewText.length > 100) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/post/${post._id}`);
+                      }}
+                      className="text-gray-500 text-sm ml-2 hover:text-gray-700"
+                    >
+                      ...more
+                    </button>
+                  )}
+                </>
+              );
+            } catch (error) {
+              console.error('Error parsing caption for post', post._id, ':', error, 'Caption:', post.caption);
+              return <span className="line-clamp-1 text-gray-400 italic">[Error displaying content]</span>;
+            }
+          })()}
         </div>
 
         {/* Comments section */}

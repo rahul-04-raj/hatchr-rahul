@@ -8,6 +8,7 @@ const MediaSchema = new mongoose.Schema({
 }, { _id: false });
 
 const PostSchema = new mongoose.Schema({
+  title: { type: String, required: true, trim: true },
   caption: { type: String, default: '' },
   media: [MediaSchema], // Array of media items (supports up to 10)
   // Keep old field for backward compatibility

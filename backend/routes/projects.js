@@ -49,6 +49,33 @@ router.post('/', auth, upload.single('coverImage'), async (req, res) => {
     }
 });
 
+// Search projects
+router.get('/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+
+        if (!q) {
+            return res.status(400).json({ message: 'Search query parameter required' });
+        }
+
+        const projects = await Project.find({
+            $or: [
+                { title: { $regex: q, $options: 'i' } },
+                { description: { $regex: q, $options: 'i' } },
+                { category: { $regex: q, $options: 'i' } }
+            ]
+        })
+            .sort('-createdAt')
+            .populate('user', 'username name avatar')
+            .limit(50);
+
+        res.json(projects);
+    } catch (error) {
+        console.error('Error searching projects:', error);
+        res.status(500).json({ message: 'Failed to search projects' });
+    }
+});
+
 // Get all projects for the logged-in user
 router.get('/my', auth, async (req, res) => {
     try {

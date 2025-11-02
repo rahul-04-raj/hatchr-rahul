@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import API from '../lib/api'
 import MultiMediaUpload from './MultiMediaUpload'
 import ProjectModal from './ProjectModal'
+import EditorJS from './EditorJS'
 
 const postTypes = ['update', 'announcement', 'milestone'];
 
 export default function PostModal({ onClose, onPosted }) {
   const [files, setFiles] = useState([])
-  const [caption, setCaption] = useState('')
+  const [title, setTitle] = useState('')
+  const [caption, setCaption] = useState(null)
   const [loading, setLoading] = useState(false)
+  const editorRef = useRef(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState('')
@@ -36,6 +39,10 @@ export default function PostModal({ onClose, onPosted }) {
 
   async function submit(e) {
     e.preventDefault()
+    if (!title.trim()) {
+      alert('Please enter a title')
+      return
+    }
     if (!files || files.length === 0) {
       alert('Please select at least one media file')
       return
@@ -54,7 +61,10 @@ export default function PostModal({ onClose, onPosted }) {
     files.forEach(file => {
       fd.append('media', file)
     })
-    fd.append('caption', caption)
+    fd.append('title', title.trim())
+    // Ensure caption is a valid JSON string
+    const captionData = caption || { blocks: [], version: "2.28.0" };
+    fd.append('caption', JSON.stringify(captionData))
     fd.append('projectId', selectedProject)
     fd.append('type', postType)
 
@@ -72,6 +82,8 @@ export default function PostModal({ onClose, onPosted }) {
         console.log(`+${response.data.pointsAwarded} Hatch Points!`)
       }
 
+      setTitle('')
+      setCaption(null)
       onPosted && onPosted()
       onClose()
     } catch (err) {
@@ -161,6 +173,21 @@ export default function PostModal({ onClose, onPosted }) {
 
             <div className="mb-4 mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Title *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Give your post a title..."
+                disabled={loading}
+                required
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Post Type
               </label>
               <select
@@ -177,13 +204,19 @@ export default function PostModal({ onClose, onPosted }) {
               </select>
             </div>
 
-            <textarea
-              className="w-full border rounded-lg p-3 h-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Write a caption..."
-              value={caption}
-              onChange={e => setCaption(e.target.value)}
-              disabled={loading}
-            />
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Content
+              </label>
+              <EditorJS
+                data={caption}
+                onChange={setCaption}
+                editorRef={editorRef}
+              />
+              <div className="mt-1 text-xs text-gray-500">
+                Use the toolbar to format your content with blocks
+              </div>
+            </div>
 
             {loading && uploadProgress > 0 && (
               <div className="mt-4">
@@ -209,7 +242,7 @@ export default function PostModal({ onClose, onPosted }) {
               <button
                 type="submit"
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md disabled:opacity-50"
-                disabled={loading || files.length === 0}
+                disabled={loading || files.length === 0 || !title.trim()}
               >
                 {loading ? 'Posting...' : 'Share'}
               </button>
