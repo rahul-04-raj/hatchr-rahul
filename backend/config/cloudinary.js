@@ -15,12 +15,20 @@ const uploadToCloudinary = (buffer, folder = 'instagram_clone') => {
       {
         folder,
         resource_type: 'auto', // Automatically detect if it's image or video
-        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov'], // Allowed formats
-        transformation: { quality: 'auto:good' }, // Automatic quality optimization
+        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'webp'], // Allowed formats
+        transformation: [
+          { quality: 'auto:good', fetch_format: 'auto' }, // Automatic quality optimization and format
+          { width: 1080, crop: 'limit' } // Limit max width to 1080px for faster uploads
+        ],
+        timeout: 60000 // 60 second timeout
       },
       (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
+        if (error) {
+          console.error('Cloudinary upload error:', error);
+          reject(error);
+        } else {
+          resolve(result);
+        }
       }
     );
 

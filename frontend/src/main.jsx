@@ -16,15 +16,30 @@ import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useTheme } from './store/useTheme'
 import { useEffect } from 'react'
+import { useAuthInit } from './hooks/useAuthInit'
 
 const queryClient = new QueryClient()
 
 function App() {
   const dark = useTheme(state => state.dark)
+  const isAuthInitialized = useAuthInit()
+
   useEffect(() => {
     if (dark) document.documentElement.classList.add('dark')
     else document.documentElement.classList.remove('dark')
   }, [dark])
+
+  // Show loading screen while initializing auth
+  if (!isAuthInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

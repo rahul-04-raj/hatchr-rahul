@@ -1,22 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import API from '../lib/api';
 import EditProfileModal from '../components/EditProfileModal';
 import ProjectCard from '../components/ProjectCard';
 import { useAuth } from '../store/useAuth';
 import { Twitter, Linkedin, Instagram } from 'lucide-react';
+import Toast from '../components/Toast';
 
 export default function Profile() {
   const { username } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [toast, setToast] = useState(null);
   const currentUser = useAuth(state => state.user);
 
   useEffect(() => {
     loadProfile();
+
+    // Show toast if navigation state has a message
+    if (location.state?.message) {
+      setToast({ message: location.state.message, type: 'success' });
+      // Clear the state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
   }, [username]);
 
   const loadProfile = async () => {
@@ -52,7 +62,7 @@ export default function Profile() {
             </div>
             <div style={{ flexGrow: 1, width: '100%', minWidth: 0 }}>
               <div className="h-12 bg-gray-200 rounded-lg mb-8 w-80"></div>
-              <div style={{ 
+              <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: '2rem',
@@ -93,8 +103,8 @@ export default function Profile() {
               {/* Avatar */}
               <div className="flex justify-center mb-6">
                 <img
-                  src={user.avatar && user.avatar.trim() !== '' 
-                    ? user.avatar 
+                  src={user.avatar && user.avatar.trim() !== ''
+                    ? user.avatar
                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.username)}&size=128&background=fb923c&color=fff`
                   }
                   alt={user.username}
@@ -134,7 +144,7 @@ export default function Profile() {
               {/* Social Links */}
               <div className="flex justify-center gap-4 mb-6">
                 {user.socialLinks?.twitter && (
-                  <a 
+                  <a
                     href={user.socialLinks.twitter.startsWith('http') ? user.socialLinks.twitter : `https://twitter.com/${user.socialLinks.twitter}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -144,7 +154,7 @@ export default function Profile() {
                   </a>
                 )}
                 {user.socialLinks?.linkedin && (
-                  <a 
+                  <a
                     href={user.socialLinks.linkedin.startsWith('http') ? user.socialLinks.linkedin : `https://linkedin.com/in/${user.socialLinks.linkedin}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -154,7 +164,7 @@ export default function Profile() {
                   </a>
                 )}
                 {user.socialLinks?.instagram && (
-                  <a 
+                  <a
                     href={user.socialLinks.instagram.startsWith('http') ? user.socialLinks.instagram : `https://instagram.com/${user.socialLinks.instagram}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -180,13 +190,13 @@ export default function Profile() {
           {/* Right Content - Key Hatched Projects */}
           <div style={{ flexGrow: 1, width: '100%', minWidth: 0 }}>
             <h2 className="text-3xl font-bold mb-8">Key Hatched Projects</h2>
-            
+
             {projects.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm p-12 text-center">
                 <p className="text-gray-500">No projects yet</p>
               </div>
             ) : (
-              <div style={{ 
+              <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: '2rem',
@@ -208,6 +218,15 @@ export default function Profile() {
           user={user}
           onClose={() => setShowEditModal(false)}
           onUpdate={handleProfileUpdate}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

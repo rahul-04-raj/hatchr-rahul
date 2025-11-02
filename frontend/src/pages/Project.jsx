@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../lib/api';
 import PostModal from '../components/PostModal';
@@ -15,12 +15,28 @@ export default function ProjectPage() {
     const currentUser = useAuth(state => state.user);
     const [imageError, setImageError] = useState(false);
     const [showPostModal, setShowPostModal] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const menuRef = useRef(null);
+    const buttonRef = useRef(null);
 
     useEffect(() => {
         if (projectId) {
             fetchProject();
         }
     }, [projectId]);
+
+    // Handle click outside for menu
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (menuRef.current && !menuRef.current.contains(event.target) &&
+                buttonRef.current && !buttonRef.current.contains(event.target)) {
+                setShowMenu(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [menuRef]);
 
     async function fetchProject() {
         try {
@@ -48,6 +64,28 @@ export default function ProjectPage() {
             setLoading(false);
         }
     }
+
+    const handleDeleteProject = async () => {
+        if (!window.confirm('Are you sure you want to delete this project? This will also delete all posts associated with it.')) {
+            return;
+        }
+
+        setDeleteLoading(true);
+        setShowMenu(false);
+
+        try {
+            await API.delete(`/projects/${projectId}`);
+            // Navigate immediately without waiting for alert
+            navigate(`/profile/${currentUser.username}`, {
+                replace: true,
+                state: { message: 'Project deleted successfully' }
+            });
+        } catch (err) {
+            console.error('Error deleting project:', err);
+            alert(err.response?.data?.message || 'Failed to delete project');
+            setDeleteLoading(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -115,24 +153,56 @@ export default function ProjectPage() {
 
                 {/* Project Info */}
                 <div className="p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                        {/* Author Info */}
-                        <img
-                            src={project.user?.avatar || '/placeholder-avatar.png'}
-                            alt={project.user?.username}
-                            className="w-10 h-10 rounded-full"
-                        />
-                        <div>
-                            <div
-                                className="font-semibold hover:underline cursor-pointer"
-                                onClick={() => navigate(`/profile/${project.user?.username}`)}
-                            >
-                                {project.user?.username}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                                Created {new Date(project.createdAt).toLocaleDateString()}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                            {/* Author Info */}
+                            <img
+                                src={project.user?.avatar || '/placeholder-avatar.png'}
+                                alt={project.user?.username}
+                                className="w-10 h-10 rounded-full"
+                            />
+                            <div>
+                                <div
+                                    className="font-semibold hover:underline cursor-pointer"
+                                    onClick={() => navigate(`/profile/${project.user?.username}`)}
+                                >
+                                    {project.user?.username}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                    Created {new Date(project.createdAt).toLocaleDateString()}
+                                </div>
                             </div>
                         </div>
+
+                        {/* 3-dot menu for owner */}
+                        {project.user?._id === currentUser?._id && (
+                            <div className="relative">
+                                <button
+                                    ref={buttonRef}
+                                    onClick={() => setShowMenu(!showMenu)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                    </svg>
+                                </button>
+
+                                {showMenu && (
+                                    <div
+                                        ref={menuRef}
+                                        className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border py-1 z-50"
+                                    >
+                                        <button
+                                            onClick={handleDeleteProject}
+                                            disabled={deleteLoading}
+                                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 disabled:opacity-50"
+                                        >
+                                            {deleteLoading ? 'Deleting...' : 'Delete Project'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <h1 className="text-2xl font-bold mb-2">{project.title}</h1>
@@ -188,10 +258,7 @@ export default function ProjectPage() {
                 <PostModal
                     projectId={project._id}
                     onClose={() => setShowPostModal(false)}
-                    onPosted={() => {
-                        setShowPostModal(false);
-                        fetchProject();
-                    }}
+                    onPosted={() => setShowPostModal(false)}
                 />
             )}
         </div>

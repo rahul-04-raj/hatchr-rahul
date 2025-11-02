@@ -15,7 +15,7 @@ export default function Navbar() {
   const [showPostModal, setShowPostModal] = useState(false)
 
   function doLogout() { logout(); nav('/login') }
-  
+
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
@@ -54,7 +54,7 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <button 
+                <button
                   onClick={() => setShowPostModal(true)}
                   className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 >
@@ -63,7 +63,7 @@ export default function Navbar() {
                   </svg>
                   Create Post
                 </button>
-                <button 
+                <button
                   onClick={() => setShowProjectModal(true)}
                   className="bg-orange-400 hover:bg-orange-500 text-white font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 >
@@ -88,14 +88,14 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="text-gray-700 hover:text-gray-900 font-medium"
                 >
                   Login
                 </Link>
-                <Link 
-                  to="/signup" 
+                <Link
+                  to="/signup"
                   className="bg-orange-400 hover:bg-orange-500 text-white font-medium px-4 py-2 rounded-lg transition-colors"
                 >
                   Sign Up
@@ -105,16 +105,20 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-      
+
       {/* Modals */}
       {showProjectModal && (
-        <ProjectModal 
-          isOpen={showProjectModal} 
-          onClose={() => setShowProjectModal(false)} 
+        <ProjectModal
+          isOpen={showProjectModal}
+          onClose={() => setShowProjectModal(false)}
+          onSuccess={() => setShowProjectModal(false)}
         />
       )}
       {showPostModal && (
-        <PostModal onPosted={() => { setShowPostModal(false); nav('/feed'); }} onClose={() => setShowPostModal(false)} />
+        <PostModal
+          onPosted={() => setShowPostModal(false)}
+          onClose={() => setShowPostModal(false)}
+        />
       )}
     </div>
   )

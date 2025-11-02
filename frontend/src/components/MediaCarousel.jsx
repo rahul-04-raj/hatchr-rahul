@@ -104,7 +104,7 @@ export default function MediaCarousel({ media }) {
     };
 
     return (
-        <div className="relative w-full bg-black">
+        <div className="relative w-full bg-black" onClick={(e) => e.stopPropagation()}>
             {/* Media Display */}
             <div
                 className="relative w-full overflow-hidden cursor-grab active:cursor-grabbing"
@@ -119,16 +119,18 @@ export default function MediaCarousel({ media }) {
                 {mediaItems.map((item, index) => (
                     <div
                         key={index}
-                        className={`transition-opacity duration-300 ${index === currentIndex ? 'opacity-100' : 'opacity-0 absolute inset-0'
+                        className={`transition-opacity duration-300 ${index === currentIndex ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'
                             }`}
                         style={{ backgroundColor: BAR_COLOR }}
                     >
-                        <FixedWidthMedia
-                            src={item.url}
-                            type={item.type}
-                            fixedWidth={FIXED_WIDTH}
-                            barColor={BAR_COLOR}
-                        />
+                        {index === currentIndex && (
+                            <FixedWidthMedia
+                                src={item.url}
+                                type={item.type}
+                                fixedWidth={FIXED_WIDTH}
+                                barColor={BAR_COLOR}
+                            />
+                        )}
                     </div>
                 ))}
             </div>
@@ -177,8 +179,8 @@ export default function MediaCarousel({ media }) {
                                 goToSlide(index);
                             }}
                             className={`w-2 h-2 rounded-full transition-all ${index === currentIndex
-                                    ? 'bg-white w-8'
-                                    : 'bg-white/50 hover:bg-white/75'
+                                ? 'bg-white w-8'
+                                : 'bg-white/50 hover:bg-white/75'
                                 }`}
                             aria-label={`Go to slide ${index + 1}`}
                         />

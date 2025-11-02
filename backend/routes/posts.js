@@ -98,7 +98,7 @@ router.get('/', async (req, res) => {
   try {
     const userId = req.user?._id || req.userId;
     const { sort = 'best' } = req.query;
-    
+
     // Fetch all posts with populated data
     let posts = await Post.find()
       .lean()
@@ -128,7 +128,7 @@ router.get('/', async (req, res) => {
       case 'rising':
         posts = posts.map(post => {
           const postTime = new Date(post.createdAt).getTime();
-          
+
           // Only consider posts from last 48 hours for rising
           if (now - postTime > 48 * 60 * 60 * 1000) {
             return { ...post, risingScore: 0 };
@@ -141,7 +141,7 @@ router.get('/', async (req, res) => {
 
           // Rising score = recent engagement - recent downvotes
           const risingScore = (recentUpvotes + recentComments) - recentDownvotes;
-          
+
           return { ...post, risingScore };
         });
         posts.sort((a, b) => (b.risingScore || 0) - (a.risingScore || 0));
@@ -153,13 +153,13 @@ router.get('/', async (req, res) => {
           const upvotes = post.upvotes.length;
           const downvotes = post.downvotes.length;
           const comments = post.comments ? post.comments.length : 0;
-          
+
           // Best score = upvotes - downvotes + (comments * 0.5)
           // Tie-breaker: more recent posts get slight boost
           const score = upvotes - downvotes + (comments * 0.5);
           const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
           const recencyBoost = Math.max(0, 10 - ageInHours) * 0.1; // Small boost for posts < 10h old
-          
+
           return { ...post, bestScore: score + recencyBoost };
         });
         posts.sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0));
@@ -208,14 +208,19 @@ router.post('/', auth, upload.array('media', 10), async (req, res) => {
       });
     }
 
-    // Upload all media files
+    // Upload all media files in parallel
     const mediaArray = [];
-    for (let i = 0; i < req.files.length; i++) {
-      const file = req.files[i];
+    const uploadPromises = req.files.map(async (file, i) => {
       let mediaUrl;
 
       try {
-        const result = await uploadToCloudinary(file.buffer);
+        // Add timeout to Cloudinary upload
+        const uploadPromise = uploadToCloudinary(file.buffer);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Upload timeout')), 30000) // 30s timeout
+        );
+
+        const result = await Promise.race([uploadPromise, timeoutPromise]);
         mediaUrl = result.secure_url;
       } catch (err) {
         console.error('Cloudinary upload failed:', err);
@@ -229,18 +234,25 @@ router.post('/', auth, upload.array('media', 10), async (req, res) => {
           mediaUrl = `/${UPLOAD_DIR}/${filename}`;
         } catch (err2) {
           console.error('Local save failed:', err2);
-          return res.status(500).json({
-            success: false,
-            message: 'Failed to save media'
-          });
+          throw new Error('Failed to save media');
         }
       }
 
-      mediaArray.push({
+      return {
         url: mediaUrl,
         type: file.mimetype.startsWith('video/') ? 'video' : 'image',
         contentType: file.mimetype,
         order: i
+      };
+    });
+
+    try {
+      const uploadedMedia = await Promise.all(uploadPromises);
+      mediaArray.push(...uploadedMedia);
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to upload media files'
       });
     }
 

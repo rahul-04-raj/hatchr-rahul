@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-body { @apply bg-gray-50 text-gray-800; }
+body {
+  @apply bg-gray-50 text-gray-800;
+}
 
 /* Editor.js Styling */
 .editor-js-container {
@@ -175,4 +177,21 @@ body { @apply bg-gray-50 text-gray-800; }
   background-color: transparent;
   color: #f3f4f6;
   padding: 0;
+}
+
+/* Toast animations */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
 }

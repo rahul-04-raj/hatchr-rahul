@@ -38,8 +38,8 @@ export default function PostCard({ post, onRefresh }) {
   // Handle click outside for menu
   useEffect(() => {
     function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target) && 
-          buttonRef.current && !buttonRef.current.contains(event.target)) {
+      if (menuRef.current && !menuRef.current.contains(event.target) &&
+        buttonRef.current && !buttonRef.current.contains(event.target)) {
         setShowMenu(false)
       }
     }
@@ -139,7 +139,9 @@ export default function PostCard({ post, onRefresh }) {
       e.target.closest('button') ||
       e.target.closest('a') ||
       e.target.closest('input') ||
-      e.target.closest('form')
+      e.target.closest('form') ||
+      e.target.closest('video') ||
+      e.target.closest('img')
     ) {
       return;
     }
@@ -147,7 +149,7 @@ export default function PostCard({ post, onRefresh }) {
   };
 
   return (
-    <div 
+    <div
       className="bg-white rounded-lg shadow mb-6 cursor-pointer hover:shadow-lg transition-shadow relative"
       onClick={handlePostClick}
     >
@@ -194,11 +196,11 @@ export default function PostCard({ post, onRefresh }) {
           {showMenu && (
             <div
               ref={menuRef}
-              style={{ 
-                position: 'fixed', 
-                top: `${menuPosition.top}px`, 
+              style={{
+                position: 'fixed',
+                top: `${menuPosition.top}px`,
                 right: `${menuPosition.right}px`,
-                zIndex: 9999 
+                zIndex: 9999
               }}
               className="w-48 bg-white rounded-lg shadow-xl border py-1"
             >
@@ -302,7 +304,7 @@ export default function PostCard({ post, onRefresh }) {
               if (post.caption === '[object Object]' || typeof post.caption === 'object') {
                 console.log('PostCard received object caption:', post.caption, 'for post:', post._id);
               }
-              
+
               // Handle different caption formats
               let captionData;
               if (typeof post.caption === 'string') {
@@ -310,7 +312,7 @@ export default function PostCard({ post, onRefresh }) {
                 if (post.caption === '[object Object]' || post.caption === 'null' || post.caption === 'undefined') {
                   return <span className="line-clamp-1 text-gray-400 italic">[No content]</span>;
                 }
-                
+
                 try {
                   captionData = JSON.parse(post.caption);
                 } catch (parseError) {
@@ -338,23 +340,23 @@ export default function PostCard({ post, onRefresh }) {
               } else {
                 return <span className="line-clamp-1 text-gray-400 italic">[No content]</span>;
               }
-              
+
               // Check if it's valid Editor.js format
               if (!captionData?.blocks || !Array.isArray(captionData.blocks)) {
                 console.warn('Invalid Editor.js format:', captionData);
                 return <span className="line-clamp-1 text-gray-400 italic">[No content]</span>;
               }
-              
+
               // Handle empty blocks array
               if (captionData.blocks.length === 0) {
                 return <span className="line-clamp-1 text-gray-400 italic">[Empty content]</span>;
               }
-              
+
               const firstBlock = captionData.blocks[0];
               if (!firstBlock || !firstBlock.data) {
                 return <span className="line-clamp-1 text-gray-400 italic">[No content]</span>;
               }
-              
+
               let previewText = '';
               if (firstBlock.type === 'paragraph' || firstBlock.type === 'header') {
                 previewText = firstBlock.data?.text?.replace(/<[^>]*>/g, '') || '';
@@ -379,12 +381,12 @@ export default function PostCard({ post, onRefresh }) {
               } else {
                 previewText = '[Content]';
               }
-              
+
               // If preview text is empty, show placeholder
               if (!previewText || previewText.trim() === '') {
                 return <span className="line-clamp-1 text-gray-400 italic">[Empty content]</span>;
               }
-              
+
               return (
                 <>
                   <span className="line-clamp-1">{previewText}</span>

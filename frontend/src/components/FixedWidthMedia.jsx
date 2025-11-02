@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * FixedWidthMedia Component
- * Displays media (image/video) with a fixed width container.
- * Images smaller than the fixed width are centered with side bars.
- * Images larger than the fixed width are scaled down maintaining aspect ratio.
+ * Displays media (image/video) with smart sizing:
+ * - If image height fits within 600px: show full width, no black bars
+ * - If image height exceeds 600px: constrain to 600px height with black bars on sides
  * 
  * @param {string} src - The media URL
  * @param {string} type - 'image' or 'video'
@@ -12,8 +12,7 @@ import React, { useState, useEffect, useRef } from 'react';
  * @param {string} barColor - Color of side bars (default: '#1a1a1a')
  */
 export default function FixedWidthMedia({ src, type = 'image', fixedWidth = 600, barColor = '#1a1a1a' }) {
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [needsBars, setNeedsBars] = useState(false);
+  const [needsConstraint, setNeedsConstraint] = useState(false);
   const [loading, setLoading] = useState(true);
   const imgRef = useRef(null);
 
@@ -25,17 +24,16 @@ export default function FixedWidthMedia({ src, type = 'image', fixedWidth = 600,
       img.onload = () => {
         const naturalWidth = img.naturalWidth;
         const naturalHeight = img.naturalHeight;
-        
-        // Determine if we need side bars
-        if (naturalWidth < fixedWidth) {
-          setNeedsBars(true);
-          setDimensions({ width: naturalWidth, height: naturalHeight });
-        } else {
-          setNeedsBars(false);
-          // Scale down maintaining aspect ratio
-          const aspectRatio = naturalHeight / naturalWidth;
-          setDimensions({ width: fixedWidth, height: fixedWidth * aspectRatio });
-        }
+        const maxHeight = 300;
+
+        // Calculate aspect ratio
+        const aspectRatio = naturalHeight / naturalWidth;
+
+        // Calculate height if we use full available width
+        const heightAtFullWidth = fixedWidth * aspectRatio;
+
+        // Only need constraint (black bars) if height would exceed maxHeight
+        setNeedsConstraint(heightAtFullWidth > maxHeight);
         setLoading(false);
       };
       img.onerror = () => {
@@ -46,21 +44,24 @@ export default function FixedWidthMedia({ src, type = 'image', fixedWidth = 600,
 
   if (type === 'video') {
     return (
-      <div 
-        className="flex items-center justify-center w-full"
-        style={{ 
-          backgroundColor: barColor 
-        }}
-      >
+      <div className="flex items-center justify-center w-full bg-black">
         <video
           src={src}
           controls
           controlsList="nodownload"
           className="w-full"
-          style={{ maxWidth: `${fixedWidth}px` }}
+          style={{ maxHeight: '600px' }}
           playsInline
           preload="metadata"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            const video = e.target;
+            if (video.paused) {
+              video.play();
+            } else {
+              video.pause();
+            }
+          }}
         >
           Your browser does not support the video tag.
         </video>
@@ -68,29 +69,41 @@ export default function FixedWidthMedia({ src, type = 'image', fixedWidth = 600,
     );
   }
 
-  return (
-    <div 
-      className="flex items-center justify-center w-full"
-      style={{ 
-        backgroundColor: needsBars ? barColor : 'black',
-        minHeight: loading ? '400px' : (dimensions.height || 'auto')
-      }}
-    >
-      {loading && (
+  // For images
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-full bg-black" style={{ minHeight: '400px' }}>
         <div className="animate-pulse bg-gray-800 w-full h-96"></div>
-      )}
+      </div>
+    );
+  }
+
+  if (needsConstraint) {
+    // Image is too tall - use black bars and constrain height
+    return (
+      <div className="flex items-center justify-center w-full bg-black" style={{ height: '600px' }}>
+        <img
+          ref={imgRef}
+          src={src}
+          alt="Post media"
+          className="block h-full w-auto object-contain"
+          draggable="false"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    );
+  }
+
+  // Image fits within height limit - show full width, no black bars
+  return (
+    <div className="flex items-center justify-center w-full">
       <img
         ref={imgRef}
         src={src}
         alt="Post media"
-        className={`block ${loading ? 'hidden' : ''}`}
-        style={{
-          width: needsBars ? `${dimensions.width}px` : '100%',
-          maxWidth: `${fixedWidth}px`,
-          height: 'auto'
-        }}
+        className="block w-full h-auto"
         draggable="false"
-        onLoad={() => setLoading(false)}
+        onClick={(e) => e.stopPropagation()}
       />
     </div>
   );

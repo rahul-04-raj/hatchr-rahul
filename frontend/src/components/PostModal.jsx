@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import API from '../lib/api'
 import MultiMediaUpload from './MultiMediaUpload'
 import ProjectModal from './ProjectModal'
@@ -7,6 +8,7 @@ import EditorJS from './EditorJS'
 const postTypes = ['update', 'announcement', 'milestone', 'hatching'];
 
 export default function PostModal({ onClose, onPosted, projectId = null, forcePostType = null, hatchingMode = false }) {
+  const navigate = useNavigate()
   const [files, setFiles] = useState([])
   const [title, setTitle] = useState('')
   const [caption, setCaption] = useState(null)
@@ -76,6 +78,7 @@ export default function PostModal({ onClose, onPosted, projectId = null, forcePo
     try {
       const response = await API.post('/posts', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000, // 60 second timeout
         onUploadProgress: (progressEvent) => {
           const progress = (progressEvent.loaded / progressEvent.total) * 100
           setUploadProgress(Math.round(progress))
@@ -89,11 +92,28 @@ export default function PostModal({ onClose, onPosted, projectId = null, forcePo
 
       setTitle('')
       setCaption(null)
-      onPosted && onPosted()
+      setFiles([])
+
+      // Close modal first
       onClose()
+
+      // Call onPosted callback if provided (this closes parent modals)
+      if (onPosted) {
+        onPosted()
+      }
+
+      // Navigate to feed with success message after cleanup
+      setTimeout(() => {
+        navigate('/feed', {
+          state: { message: hatchingMode ? 'Project hatched successfully! 🐣' : 'Post created successfully! 🎉' }
+        })
+      }, 150)
     } catch (err) {
-      console.error(err)
-      alert(err.response?.data?.message || 'Upload failed')
+      console.error('Upload error:', err)
+      const errorMessage = err.code === 'ECONNABORTED'
+        ? 'Upload timed out. Please try with fewer or smaller files.'
+        : err.response?.data?.message || 'Upload failed. Please try again.'
+      alert(errorMessage)
     } finally {
       setLoading(false)
       setUploadProgress(0)

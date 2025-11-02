@@ -1,17 +1,31 @@
 import React, { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import API from '../lib/api'
 import PostCard from '../components/PostCard'
 import TopInnovators from '../components/TopInnovators'
 import TrendingProjects from '../components/TrendingProjects'
+import Toast from '../components/Toast'
 
 export default function Feed() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('best')
+  const [toast, setToast] = useState(null)
+  const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     load()
   }, [activeFilter])
+
+  useEffect(() => {
+    // Show toast if navigation state has a message
+    if (location.state?.message) {
+      setToast({ message: location.state.message, type: 'success' })
+      // Clear the state
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state])
 
   async function load() {
     setLoading(true)
@@ -20,8 +34,8 @@ export default function Feed() {
       setPosts(res.data.posts || [])
     } catch (err) {
       console.error(err)
-    } finally { 
-      setLoading(false) 
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -35,10 +49,10 @@ export default function Feed() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Main Layout Grid - Three Columns with Fixed Widths for Perfect Centering */}
-      <div 
+      <div
         className="main-layout hidden lg:grid"
-        style={{ 
-          display: 'grid', 
+        style={{
+          display: 'grid',
           gridTemplateColumns: '300px minmax(550px, 700px) 300px',
           gap: '2rem',
           alignItems: 'flex-start',
@@ -63,11 +77,10 @@ export default function Feed() {
                 <button
                   key={filter.id}
                   onClick={() => setActiveFilter(filter.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    activeFilter === filter.id
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeFilter === filter.id
                       ? 'bg-orange-500 text-white shadow-md'
                       : 'bg-white text-gray-700 hover:bg-orange-200'
-                  }`}
+                    }`}
                 >
                   {filter.label}
                 </button>
@@ -109,11 +122,10 @@ export default function Feed() {
               <button
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  activeFilter === filter.id
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeFilter === filter.id
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-white text-gray-700 hover:bg-orange-200'
-                }`}
+                  }`}
               >
                 {filter.label}
               </button>
@@ -137,6 +149,15 @@ export default function Feed() {
           ))
         )}
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

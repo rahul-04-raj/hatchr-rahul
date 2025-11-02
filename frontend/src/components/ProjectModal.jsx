@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../lib/api';
 import { useImage } from '../hooks/useImage';
 import { useAuth } from '../store/useAuth';
@@ -18,6 +19,7 @@ const categories = [
 ];
 
 export default function ProjectModal({ isOpen, onClose, onSuccess }) {
+    const navigate = useNavigate();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState(categories[0]);
@@ -59,9 +61,9 @@ export default function ProjectModal({ isOpen, onClose, onSuccess }) {
     };
 
     const handleHatchingComplete = () => {
+        // PostModal already handles navigation, just cleanup and close parent
         setShowHatchingModal(false);
-        onSuccess(createdProject);
-        onClose();
+
         // Reset form
         setTitle('');
         setDescription('');
@@ -69,11 +71,19 @@ export default function ProjectModal({ isOpen, onClose, onSuccess }) {
         setCoverImage(null);
         setCreatedProject(null);
         setLoading(false);
+
+        // Notify parent and close
+        if (onSuccess) {
+            onSuccess(createdProject);
+        }
+        onClose();
     };
 
     const handleSkipHatching = () => {
         setShowHatchingModal(false);
-        onSuccess(createdProject);
+        if (onSuccess) {
+            onSuccess(createdProject);
+        }
         onClose();
         // Reset form
         setTitle('');
@@ -82,6 +92,13 @@ export default function ProjectModal({ isOpen, onClose, onSuccess }) {
         setCoverImage(null);
         setCreatedProject(null);
         setLoading(false);
+
+        // Navigate to feed
+        setTimeout(() => {
+            navigate('/feed', {
+                state: { message: 'Project created successfully! Add your first post to hatch it. 🥚' }
+            });
+        }, 100);
     };
 
     if (!isOpen) return null;
@@ -89,15 +106,13 @@ export default function ProjectModal({ isOpen, onClose, onSuccess }) {
     // Show hatching modal after project creation
     if (showHatchingModal && createdProject) {
         return (
-            <>
-                <PostModal
-                    onClose={handleSkipHatching}
-                    onPosted={handleHatchingComplete}
-                    projectId={createdProject._id}
-                    forcePostType="hatching"
-                    hatchingMode={true}
-                />
-            </>
+            <PostModal
+                onClose={handleSkipHatching}
+                onPosted={handleHatchingComplete}
+                projectId={createdProject._id}
+                forcePostType="hatching"
+                hatchingMode={true}
+            />
         );
     }
 
