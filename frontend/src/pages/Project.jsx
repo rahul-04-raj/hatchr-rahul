@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../lib/api';
-import PostCard from '../components/PostCard';
+import PostModal from '../components/PostModal';
+import ProjectTimeline from '../components/ProjectTimeline';
 import { useImage } from '../hooks/useImage';
 import { useAuth } from '../store/useAuth';
 
@@ -13,6 +14,7 @@ export default function ProjectPage() {
     const navigate = useNavigate();
     const currentUser = useAuth(state => state.user);
     const [imageError, setImageError] = useState(false);
+    const [showPostModal, setShowPostModal] = useState(false);
 
     useEffect(() => {
         if (projectId) {
@@ -141,10 +143,10 @@ export default function ProjectPage() {
             {/* Project Posts Timeline */}
             <div className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Project Updates</h2>
+                    <h2 className="text-xl font-semibold">Project Timeline</h2>
                     {project.user?._id === currentUser?._id && (
                         <button
-                            onClick={() => navigate(`/post/new?project=${project._id}`)}
+                            onClick={() => setShowPostModal(true)}
                             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,23 +158,7 @@ export default function ProjectPage() {
                 </div>
 
                 {project.posts && project.posts.length > 0 ? (
-                    <div className="relative">
-                        {/* Timeline Line */}
-                        <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-
-                        {/* Posts */}
-                        <div className="space-y-8">
-                            {project.posts.map(post => (
-                                <div key={post._id} className="relative pl-12">
-                                    {/* Timeline Dot */}
-                                    <div className="absolute left-4 top-5 w-3 h-3 bg-blue-500 rounded-full transform -translate-x-1/2"></div>
-
-                                    {/* Post Card */}
-                                    <PostCard post={post} onUpdate={fetchProject} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <ProjectTimeline posts={project.posts} onRefresh={fetchProject} />
                 ) : (
                     <div className="bg-white rounded-lg shadow p-8 text-center">
                         <div className="mb-4">
@@ -184,7 +170,7 @@ export default function ProjectPage() {
                         <p className="text-gray-500 mb-4">This project doesn't have any updates posted yet.</p>
                         {project.user?._id === currentUser?._id && (
                             <button
-                                onClick={() => navigate(`/post/new?project=${project._id}`)}
+                                onClick={() => setShowPostModal(true)}
                                 className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center gap-2"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,6 +182,18 @@ export default function ProjectPage() {
                     </div>
                 )}
             </div>
+
+            {/* Post Modal */}
+            {showPostModal && (
+                <PostModal
+                    projectId={project._id}
+                    onClose={() => setShowPostModal(false)}
+                    onPosted={() => {
+                        setShowPostModal(false);
+                        fetchProject();
+                    }}
+                />
+            )}
         </div>
     );
 }

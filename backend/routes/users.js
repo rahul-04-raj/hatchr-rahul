@@ -34,6 +34,30 @@ router.get('/search/all', async (req, res) => {
   }
 });
 
+// GET /api/users/top-innovators - Get top users by points this week
+router.get('/top-innovators', async (req, res) => {
+  try {
+    // Calculate date 7 days ago
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    // Get top 7 users by hatchPoints
+    const topUsers = await User.find()
+      .select('username name avatar hatchPoints')
+      .sort({ hatchPoints: -1 })
+      .limit(7)
+      .lean();
+
+    res.json({
+      success: true,
+      users: topUsers
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // GET /api/users/:username
 router.get('/:username', async (req, res) => {
   try {

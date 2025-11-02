@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import API from '../lib/api';
 import { useImage } from '../hooks/useImage';
 import { useAuth } from '../store/useAuth';
+import PostModal from './PostModal';
 
 const categories = [
     'AI/ML',
@@ -24,6 +25,8 @@ export default function ProjectModal({ isOpen, onClose, onSuccess }) {
     const [coverImage, setCoverImage] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showHatchingModal, setShowHatchingModal] = useState(false);
+    const [createdProject, setCreatedProject] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,16 +49,57 @@ export default function ProjectModal({ isOpen, onClose, onSuccess }) {
                 },
             });
 
-            onSuccess(response.data);
-            onClose();
+            // Store the created project and show hatching modal
+            setCreatedProject(response.data);
+            setShowHatchingModal(true);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create project');
-        } finally {
             setLoading(false);
         }
     };
 
+    const handleHatchingComplete = () => {
+        setShowHatchingModal(false);
+        onSuccess(createdProject);
+        onClose();
+        // Reset form
+        setTitle('');
+        setDescription('');
+        setCategory(categories[0]);
+        setCoverImage(null);
+        setCreatedProject(null);
+        setLoading(false);
+    };
+
+    const handleSkipHatching = () => {
+        setShowHatchingModal(false);
+        onSuccess(createdProject);
+        onClose();
+        // Reset form
+        setTitle('');
+        setDescription('');
+        setCategory(categories[0]);
+        setCoverImage(null);
+        setCreatedProject(null);
+        setLoading(false);
+    };
+
     if (!isOpen) return null;
+
+    // Show hatching modal after project creation
+    if (showHatchingModal && createdProject) {
+        return (
+            <>
+                <PostModal
+                    onClose={handleSkipHatching}
+                    onPosted={handleHatchingComplete}
+                    projectId={createdProject._id}
+                    forcePostType="hatching"
+                    hatchingMode={true}
+                />
+            </>
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

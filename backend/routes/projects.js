@@ -112,6 +112,65 @@ router.get('/user/:username', async (req, res) => {
     }
 });
 
+// GET /api/projects/trending - Get trending projects
+router.get('/trending', async (req, res) => {
+    try {
+        // Get all projects with their posts populated
+        const projects = await Project.find()
+            .populate('user', 'username name avatar')
+            .populate('posts')
+            .lean();
+
+        // Calculate trending score for each project
+        const projectsWithScores = projects.map(project => {
+            let score = 0;
+            
+            // Count total engagement from posts
+            if (project.posts && project.posts.length > 0) {
+                project.posts.forEach(post => {
+                    const upvotes = post.upvotes ? post.upvotes.length : 0;
+                    const downvotes = post.downvotes ? post.downvotes.length : 0;
+                    const comments = post.comments ? post.comments.length : 0;
+                    
+                    // Score = upvotes - downvotes + (comments * 0.5) + post count bonus
+                    score += upvotes - downvotes + (comments * 0.5);
+                });
+                
+                // Bonus for having multiple posts
+                score += project.posts.length * 2;
+            }
+            
+            return {
+                ...project,
+                score: Math.max(0, score) // Ensure non-negative score
+            };
+        });
+
+        // Sort by score and get top 4
+        const trendingProjects = projectsWithScores
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 4)
+            .map(p => ({
+                _id: p._id,
+                title: p.title,
+                user: p.user,
+                score: Math.round(p.score),
+                coverImage: p.coverImage
+            }));
+
+        res.json({
+            success: true,
+            projects: trendingProjects
+        });
+    } catch (error) {
+        console.error('Error fetching trending projects:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch trending projects' 
+        });
+    }
+});
+
 // Get a single project with its posts
 router.get('/:id', async (req, res) => {
     try {

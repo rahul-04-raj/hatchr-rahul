@@ -21,8 +21,12 @@ const PostSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['update', 'announcement', 'milestone'],
+    enum: ['update', 'announcement', 'milestone', 'hatching'],
     default: 'update'
+  },
+  isHatching: {
+    type: Boolean,
+    default: false
   },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

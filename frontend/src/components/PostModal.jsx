@@ -4,9 +4,9 @@ import MultiMediaUpload from './MultiMediaUpload'
 import ProjectModal from './ProjectModal'
 import EditorJS from './EditorJS'
 
-const postTypes = ['update', 'announcement', 'milestone'];
+const postTypes = ['update', 'announcement', 'milestone', 'hatching'];
 
-export default function PostModal({ onClose, onPosted }) {
+export default function PostModal({ onClose, onPosted, projectId = null, forcePostType = null, hatchingMode = false }) {
   const [files, setFiles] = useState([])
   const [title, setTitle] = useState('')
   const [caption, setCaption] = useState(null)
@@ -14,13 +14,17 @@ export default function PostModal({ onClose, onPosted }) {
   const editorRef = useRef(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [projects, setProjects] = useState([])
-  const [selectedProject, setSelectedProject] = useState('')
-  const [postType, setPostType] = useState(postTypes[0])
+  const [selectedProject, setSelectedProject] = useState(projectId || '')
+  const [postType, setPostType] = useState(forcePostType || postTypes[0])
   const [showProjectModal, setShowProjectModal] = useState(false)
-  const [loadingProjects, setLoadingProjects] = useState(true)
+  const [loadingProjects, setLoadingProjects] = useState(!projectId)
 
   useEffect(() => {
-    fetchProjects()
+    if (!projectId) {
+      fetchProjects()
+    } else {
+      setLoadingProjects(false)
+    }
   }, [])
 
   async function fetchProjects() {
@@ -97,11 +101,20 @@ export default function PostModal({ onClose, onPosted }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose}></div>
+      <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={hatchingMode ? null : onClose}></div>
       <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
         <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl">
-          <div className="border-b px-4 py-3 flex items-center justify-between">
-            <h3 className="text-lg font-semibold" id="modal-title">Create Post</h3>
+          <div className="border-b px-4 py-3 flex items-center justify-between bg-gradient-to-r from-orange-50 to-yellow-50">
+            <div>
+              <h3 className="text-lg font-semibold" id="modal-title">
+                {hatchingMode ? '🐣 Hatch Your Project!' : 'Create Post'}
+              </h3>
+              {hatchingMode && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Introduce your project to the community
+                </p>
+              )}
+            </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
               <span className="sr-only">Close</span>
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -110,7 +123,7 @@ export default function PostModal({ onClose, onPosted }) {
             </button>
           </div>
 
-          {showProjectModal && (
+          {!hatchingMode && showProjectModal && (
             <ProjectModal
               isOpen={showProjectModal}
               onClose={() => setShowProjectModal(false)}
@@ -123,47 +136,51 @@ export default function PostModal({ onClose, onPosted }) {
           )}
 
           <form onSubmit={submit} className="p-4">
-            {loadingProjects ? (
-              <div className="mb-4 text-center">Loading projects...</div>
-            ) : projects.length === 0 ? (
-              <div className="mb-4 text-center">
-                <p className="text-gray-600 mb-2">No projects yet</p>
-                <button
-                  type="button"
-                  onClick={() => setShowProjectModal(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Create Your First Project
-                </button>
-              </div>
-            ) : (
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Select Project
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowProjectModal(true)}
-                    className="text-sm text-blue-500 hover:text-blue-600"
-                  >
-                    Create New Project
-                  </button>
-                </div>
-                <select
-                  value={selectedProject}
-                  onChange={e => setSelectedProject(e.target.value)}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={loading}
-                  required
-                >
-                  {projects.map(project => (
-                    <option key={project._id} value={project._id}>
-                      {project.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {!hatchingMode && (
+              <>
+                {loadingProjects ? (
+                  <div className="mb-4 text-center">Loading projects...</div>
+                ) : projects.length === 0 ? (
+                  <div className="mb-4 text-center">
+                    <p className="text-gray-600 mb-2">No projects yet</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowProjectModal(true)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      Create Your First Project
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Select Project
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowProjectModal(true)}
+                        className="text-sm text-blue-500 hover:text-blue-600"
+                      >
+                        Create New Project
+                      </button>
+                    </div>
+                    <select
+                      value={selectedProject}
+                      onChange={e => setSelectedProject(e.target.value)}
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={loading}
+                      required
+                    >
+                      {projects.map(project => (
+                        <option key={project._id} value={project._id}>
+                          {project.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
             )}
 
             <MultiMediaUpload
@@ -186,23 +203,25 @@ export default function PostModal({ onClose, onPosted }) {
               />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Post Type
-              </label>
-              <select
-                value={postType}
-                onChange={e => setPostType(e.target.value)}
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                {postTypes.map(type => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!hatchingMode && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Post Type
+                </label>
+                <select
+                  value={postType}
+                  onChange={e => setPostType(e.target.value)}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  {postTypes.map(type => (
+                    <option key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="mb-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">

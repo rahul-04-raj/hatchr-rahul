@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/useAuth'
 import { useTheme } from '../store/useTheme'
+import ProjectModal from './ProjectModal'
+import PostModal from './PostModal'
 
 export default function Navbar() {
   const user = useAuth(state => state.user)
@@ -9,6 +11,8 @@ export default function Navbar() {
   const toggle = useTheme(state => state.toggle)
   const nav = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [showProjectModal, setShowProjectModal] = useState(false)
+  const [showPostModal, setShowPostModal] = useState(false)
 
   function doLogout() { logout(); nav('/login') }
   
@@ -50,6 +54,24 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
+                <button 
+                  onClick={() => setShowPostModal(true)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Post
+                </button>
+                <button 
+                  onClick={() => setShowProjectModal(true)}
+                  className="bg-orange-400 hover:bg-orange-500 text-white font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Hatch Project
+                </button>
                 <Link to="/feed" className="text-gray-700 hover:text-gray-900">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -83,6 +105,17 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      
+      {/* Modals */}
+      {showProjectModal && (
+        <ProjectModal 
+          isOpen={showProjectModal} 
+          onClose={() => setShowProjectModal(false)} 
+        />
+      )}
+      {showPostModal && (
+        <PostModal onPosted={() => { setShowPostModal(false); nav('/feed'); }} onClose={() => setShowPostModal(false)} />
+      )}
     </div>
   )
 }

@@ -93,12 +93,14 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// GET /api/posts - list recent posts
+// GET /api/posts - list recent posts with sorting
 router.get('/', async (req, res) => {
   try {
     const userId = req.user?._id || req.userId;
-    const posts = await Post.find()
-      .sort({ createdAt: -1 })
+    const { sort = 'best' } = req.query;
+    
+    // Fetch all posts with populated data
+    let posts = await Post.find()
       .lean()
       .populate('user', 'username name avatar')
       .populate({
@@ -109,6 +111,60 @@ router.get('/', async (req, res) => {
         path: 'comments',
         populate: { path: 'user', select: 'username name avatar' }
       });
+
+    // Apply sorting based on query parameter
+    const now = Date.now();
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
+
+    switch (sort) {
+      case 'new':
+        posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+
+      case 'upvotes':
+        posts.sort((a, b) => b.upvotes.length - a.upvotes.length);
+        break;
+
+      case 'rising':
+        posts = posts.map(post => {
+          const postTime = new Date(post.createdAt).getTime();
+          
+          // Only consider posts from last 48 hours for rising
+          if (now - postTime > 48 * 60 * 60 * 1000) {
+            return { ...post, risingScore: 0 };
+          }
+
+          // Count recent activity (last 24h)
+          const recentUpvotes = post.upvotes.length; // Simplified - would need timestamps
+          const recentDownvotes = post.downvotes.length;
+          const recentComments = post.comments ? post.comments.length : 0;
+
+          // Rising score = recent engagement - recent downvotes
+          const risingScore = (recentUpvotes + recentComments) - recentDownvotes;
+          
+          return { ...post, risingScore };
+        });
+        posts.sort((a, b) => (b.risingScore || 0) - (a.risingScore || 0));
+        break;
+
+      case 'best':
+      default:
+        posts = posts.map(post => {
+          const upvotes = post.upvotes.length;
+          const downvotes = post.downvotes.length;
+          const comments = post.comments ? post.comments.length : 0;
+          
+          // Best score = upvotes - downvotes + (comments * 0.5)
+          // Tie-breaker: more recent posts get slight boost
+          const score = upvotes - downvotes + (comments * 0.5);
+          const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+          const recencyBoost = Math.max(0, 10 - ageInHours) * 0.1; // Small boost for posts < 10h old
+          
+          return { ...post, bestScore: score + recencyBoost };
+        });
+        posts.sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0));
+        break;
+    }
 
     // Process each post to add vote status
     const processedPosts = posts.map(post => ({
@@ -129,7 +185,7 @@ router.get('/', async (req, res) => {
 // Create a new post
 router.post('/', auth, upload.array('media', 10), async (req, res) => {
   try {
-    const { title, caption, projectId } = req.body;
+    let { title, caption, projectId, type } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({
@@ -188,6 +244,19 @@ router.post('/', auth, upload.array('media', 10), async (req, res) => {
       });
     }
 
+    // Check if this is the first post in the project
+    let isFirstPost = false;
+    if (projectId) {
+      const project = await Project.findById(projectId);
+      if (project && project.posts.length === 0) {
+        isFirstPost = true;
+        // Automatically set type to 'hatching' for first post
+        if (!type || type === 'update') {
+          type = 'hatching';
+        }
+      }
+    }
+
     const post = new Post({
       title: title.trim(),
       caption,
@@ -196,7 +265,9 @@ router.post('/', auth, upload.array('media', 10), async (req, res) => {
       mediaUrl: mediaArray[0].url,
       contentType: mediaArray[0].contentType,
       user: req.userId,
-      project: projectId
+      project: projectId,
+      type: type || 'update',
+      isHatching: isFirstPost || type === 'hatching'
     });
 
     await post.save();
