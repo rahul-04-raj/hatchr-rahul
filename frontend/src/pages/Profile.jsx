@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../lib/api';
 import EditProfileModal from '../components/EditProfileModal';
-import PostCard from '../components/PostCard';
+import ProjectCard from '../components/ProjectCard';
 import { useAuth } from '../store/useAuth';
 import { Twitter, Linkedin, Instagram } from 'lucide-react';
 
@@ -11,7 +11,6 @@ export default function Profile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [projects, setProjects] = useState([]);
-  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const currentUser = useAuth(state => state.user);
@@ -28,33 +27,8 @@ export default function Profile() {
         API.get(`/projects/user/${username}`)
       ]);
 
-      console.log('User data:', userRes.data.user);
-      console.log('User avatar:', userRes.data.user?.avatar);
       setUser(userRes.data.user);
       setProjects(projectsRes.data);
-
-      // Get all posts from projects (Key Hatched Projects)
-      const allPosts = [];
-      projectsRes.data.forEach(project => {
-        if (project.posts && project.posts.length > 0) {
-          // Get the first post (hatching post) from each project
-          const firstPost = project.posts[0];
-          const postWithUser = {
-            ...firstPost,
-            // Ensure user data is available for PostCard avatar
-            user: firstPost.user || userRes.data.user,
-            projectInfo: {
-              _id: project._id,
-              title: project.title,
-              coverImage: project.coverImage
-            }
-          };
-          console.log('Post with user:', postWithUser.user);
-          allPosts.push(postWithUser);
-        }
-      });
-      console.log('All posts:', allPosts);
-      setPosts(allPosts);
     } catch (error) {
       console.error('Failed to load profile:', error);
     } finally {
@@ -207,7 +181,7 @@ export default function Profile() {
           <div style={{ flexGrow: 1, width: '100%', minWidth: 0 }}>
             <h2 className="text-3xl font-bold mb-8">Key Hatched Projects</h2>
             
-            {posts.length === 0 ? (
+            {projects.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm p-12 text-center">
                 <p className="text-gray-500">No projects yet</p>
               </div>
@@ -216,16 +190,11 @@ export default function Profile() {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: '2rem',
-                width: '100%'
+                width: '100%',
+                alignItems: 'stretch'
               }}>
-                {posts.map((post) => (
-                  <div 
-                    key={post._id}
-                    className="cursor-pointer hover:transform hover:scale-[1.02] transition-transform"
-                    onClick={() => navigate(`/post/${post._id}`)}
-                  >
-                    <PostCard post={post} />
-                  </div>
+                {projects.map((project) => (
+                  <ProjectCard key={project._id} project={project} />
                 ))}
               </div>
             )}

@@ -23,7 +23,8 @@ Hatchr is a full-stack social media platform designed for creators, developers, 
 ### Social Features
 - **Authentication**: Secure JWT-based authentication with email verification
 - **User Profiles**: Customizable profiles with avatar, bio, social links (Twitter, LinkedIn, Instagram), and follower system
-- **Profile Layout**: Modern two-column design with bio card sidebar and 2-column project grid
+- **Profile Layout**: Modern two-column design with bio card sidebar and uniform 2-column project grid
+- **Project Cards**: Uniform-sized cards with cover images, titles, descriptions, and post counts
 - **Avatar System**: Cloudinary-hosted avatars with ui-avatars.com fallback for initials
 - **Engagement**: Upvote/downvote system and commenting on posts
 - **Real-time Notifications**: Stay updated on interactions
@@ -83,6 +84,7 @@ frontend/
 │   │   ├── PostModal.jsx         # Post creation/editing modal
 │   │   ├── PostView.jsx          # Detailed post view
 │   │   ├── ProfileHeader.jsx     # Profile header component
+│   │   ├── ProjectCard.jsx       # Uniform project card component
 │   │   ├── ProjectGrid.jsx       # Project display grid
 │   │   ├── ProjectModal.jsx      # Project creation modal
 │   │   ├── ProjectTimeline.jsx   # Project timeline view
@@ -124,7 +126,8 @@ frontend/
 ## 🎨 UI/UX Highlights
 
 - **Three-Column Layout**: Perfectly centered feed with Top Innovators (left) and Trending Projects (right) sidebars
-- **Profile Page Design**: Modern two-column layout with fixed-width bio card (340-400px) and flexible 2-column project grid
+- **Profile Page Design**: Modern two-column layout with fixed-width bio card (340-400px) and uniform 2-column project grid
+- **Project Cards**: Uniform height cards with 200px cover images, title (2-line clamp), description (2-line clamp), and category badges
 - **Avatar System**: Cloudinary integration with smart fallback to ui-avatars.com for generated initials
 - **Social Links Integration**: Display and edit Twitter, LinkedIn, and Instagram profiles with icon badges
 - **Fixed-Width Media Display**: All images maintain consistent 350px width with stylized side bars

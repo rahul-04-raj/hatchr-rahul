@@ -7,7 +7,8 @@ Built with React 18, Vite, Tailwind CSS, and Zustand state management.
 ## 📋 Features
 
 - **Three-Column Feed Layout**: Perfectly centered content with Top Innovators and Trending Projects sidebars
-- **Modern Profile Design**: Two-column layout with bio card sidebar (340-400px) and 2-column project grid
+- **Modern Profile Design**: Two-column layout with bio card sidebar (340-400px) and uniform 2-column project grid
+- **Uniform Project Cards**: Fixed-height cards with 200px cover images, clamped text, and category badges
 - **Avatar System**: Cloudinary-hosted avatars with smart fallback to ui-avatars.com for generated initials
 - **Social Links Integration**: Display Twitter, LinkedIn, Instagram profiles with icon badges (lucide-react)
 - **Rich Content Editor**: Editor.js integration with 11+ plugins for posts
@@ -162,16 +163,30 @@ gap: 2rem
   - Social links (Twitter, LinkedIn, Instagram) with icons
   - Edit Profile button
   
-- **Right Content**: Key Hatched Projects
+- **Right Content**: Key Hatched Projects Grid
   - 2-column CSS Grid (`repeat(2, 1fr)`)
-  - First post from each project
-  - Full PostCard component rendering
+  - Uniform ProjectCard components with:
+    - 200px fixed-height cover image
+    - Title (2-line clamp, 3.5rem min-height)
+    - Description (2-line clamp, 2.5rem min-height)
+    - Post count badge overlay
+    - Category badge
+  - Grid uses `alignItems: 'stretch'` for uniform heights
 
 **Avatar System:**
 - Primary: Cloudinary-hosted user avatar
 - Fallback: ui-avatars.com API with user's name/username as initials
 - Error handling with `onError` callback
 - Loading state with pulse animation
+
+**ProjectCard Component:**
+```jsx
+- Fixed 200px cover image height
+- Flexbox layout for consistent card heights
+- Line clamping for title and description
+- Hover effects with scale transform
+- Click navigation to project detail page
+```
 
 ### Editor.js Integration
 
