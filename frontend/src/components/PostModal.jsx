@@ -18,6 +18,7 @@ export default function PostModal({ onClose, onPosted, projectId = null, forcePo
   const [postType, setPostType] = useState(forcePostType || postTypes[0])
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [loadingProjects, setLoadingProjects] = useState(!projectId)
+  const hasProjectId = !!projectId // Track if projectId was provided
 
   useEffect(() => {
     if (!projectId) {
@@ -136,7 +137,7 @@ export default function PostModal({ onClose, onPosted, projectId = null, forcePo
           )}
 
           <form onSubmit={submit} className="p-4">
-            {!hatchingMode && (
+            {!hatchingMode && !hasProjectId && (
               <>
                 {loadingProjects ? (
                   <div className="mb-4 text-center">Loading projects...</div>
@@ -214,11 +215,19 @@ export default function PostModal({ onClose, onPosted, projectId = null, forcePo
                   className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={loading}
                 >
-                  {postTypes.map(type => (
-                    <option key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </option>
-                  ))}
+                  {postTypes
+                    .filter(type => {
+                      // Hide 'hatching' option if projectId is provided (updates to existing project)
+                      if (type === 'hatching' && hasProjectId) {
+                        return false;
+                      }
+                      return true;
+                    })
+                    .map(type => (
+                      <option key={type} value={type}>
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </option>
+                    ))}
                 </select>
               </div>
             )}
