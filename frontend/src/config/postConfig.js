@@ -8,7 +8,7 @@
 export const POST_CONFIG = {
   // Fixed width for post media in pixels
   // Images will be scaled/centered to fit this width
-  FIXED_WIDTH: 450,
+  FIXED_WIDTH: 350,
   
   // Background color for side bars when image is smaller than fixed width
   // Can use hex, rgb, or named colors

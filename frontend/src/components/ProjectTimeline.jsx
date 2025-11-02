@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditorJSRenderer from './EditorJSRenderer';
+import MediaCarousel from './MediaCarousel';
 
 export default function ProjectTimeline({ posts, onRefresh }) {
   const [expandedPost, setExpandedPost] = useState(null);
@@ -178,33 +179,10 @@ export default function ProjectTimeline({ posts, onRefresh }) {
                   {/* Expanded Content */}
                   {isExpanded && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
-                      {/* Media Preview */}
+                      {/* Media Carousel */}
                       {post.media && post.media.length > 0 && (
                         <div className="mb-4">
-                          <div className="grid grid-cols-2 gap-2">
-                            {post.media.slice(0, 4).map((item, idx) => (
-                              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden bg-gray-200">
-                                {item.type === 'image' ? (
-                                  <img 
-                                    src={item.url} 
-                                    alt="" 
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                                    </svg>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          {post.media.length > 4 && (
-                            <p className="text-sm text-gray-500 mt-2">
-                              +{post.media.length - 4} more
-                            </p>
-                          )}
+                          <MediaCarousel media={post.media} />
                         </div>
                       )}
 
