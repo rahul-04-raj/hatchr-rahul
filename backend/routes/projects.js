@@ -103,7 +103,13 @@ router.get('/user/:username', async (req, res) => {
         const projects = await Project.find({ user: user._id })
             .sort('-createdAt')
             .populate('user', 'username avatar')
-            .populate('posts');
+            .populate({
+                path: 'posts',
+                populate: {
+                    path: 'user',
+                    select: 'username avatar'
+                }
+            });
 
         res.json(projects);
     } catch (error) {

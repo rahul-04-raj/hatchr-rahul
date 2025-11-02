@@ -169,6 +169,16 @@ router.put('/:id', auth, async (req, res) => {
     const allowed = ['name', 'username', 'avatar', 'email', 'bio']
     const update = {}
     for (const k of allowed) if (req.body[k]) update[k] = req.body[k]
+    
+    // Handle social links separately
+    if (req.body.socialLinks) {
+      update.socialLinks = {
+        twitter: req.body.socialLinks.twitter || '',
+        linkedin: req.body.socialLinks.linkedin || '',
+        instagram: req.body.socialLinks.instagram || ''
+      }
+    }
+    
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password')
     res.json({ success: true, user })
   } catch (err) { console.error(err); res.status(500).json({ success: false, message: 'Server error' }) }

@@ -22,7 +22,9 @@ Hatchr is a full-stack social media platform designed for creators, developers, 
 
 ### Social Features
 - **Authentication**: Secure JWT-based authentication with email verification
-- **User Profiles**: Customizable profiles with avatar, bio, and follower system
+- **User Profiles**: Customizable profiles with avatar, bio, social links (Twitter, LinkedIn, Instagram), and follower system
+- **Profile Layout**: Modern two-column design with bio card sidebar and 2-column project grid
+- **Avatar System**: Cloudinary-hosted avatars with ui-avatars.com fallback for initials
 - **Engagement**: Upvote/downvote system and commenting on posts
 - **Real-time Notifications**: Stay updated on interactions
 - **Search**: Search for users, projects, and posts across the platform
@@ -122,6 +124,9 @@ frontend/
 ## 🎨 UI/UX Highlights
 
 - **Three-Column Layout**: Perfectly centered feed with Top Innovators (left) and Trending Projects (right) sidebars
+- **Profile Page Design**: Modern two-column layout with fixed-width bio card (340-400px) and flexible 2-column project grid
+- **Avatar System**: Cloudinary integration with smart fallback to ui-avatars.com for generated initials
+- **Social Links Integration**: Display and edit Twitter, LinkedIn, and Instagram profiles with icon badges
 - **Fixed-Width Media Display**: All images maintain consistent 350px width with stylized side bars
 - **Responsive Carousel**: Swipe-enabled media carousel with navigation arrows and indicators
 - **Collapsible Timeline**: Expandable post cards in project timelines for clean organization
@@ -252,7 +257,7 @@ frontend/
 | GET | `/my` | Get current user's projects | Yes |
 | GET | `/search` | Search projects (?q=query) | No |
 | GET | `/trending` | Get top 4 trending projects | No |
-| GET | `/user/:username` | Get projects by username | No |
+| GET | `/user/:username` | Get projects by username with populated user data in posts | No |
 | GET | `/:id` | Get project details with posts | No |
 | POST | `/` | Create new project (multipart: coverImage, title, description, category) | Yes |
 | PUT | `/:id` | Update project | Yes (owner) |
@@ -263,13 +268,13 @@ frontend/
 |--------|----------|-------------|---------------|
 | GET | `/top-innovators` | Get top 7 users by Hatch Points | No |
 | GET | `/search/all` | Search users (?q=query) | No |
-| GET | `/:username` | Get user profile | No |
+| GET | `/:username` | Get user profile with populated followers/following | No |
 | GET | `/:userId/followers` | Get user's followers list | No |
 | GET | `/:userId/following` | Get user's following list | No |
 | POST | `/follow/:id` | Follow a user | Yes |
 | POST | `/unfollow/:id` | Unfollow a user | Yes |
-| POST | `/avatar` | Update user avatar | Yes |
-| PUT | `/:id` | Update user profile | Yes (self) |
+| POST | `/avatar` | Update user avatar (Cloudinary) | Yes |
+| PUT | `/:id` | Update user profile (name, bio, username, socialLinks) | Yes (self) |
 
 ### Points System
 

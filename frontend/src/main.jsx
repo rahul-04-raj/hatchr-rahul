@@ -30,7 +30,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Navbar />
-        <div className="max-w-3xl mx-auto mt-6">
+        <div className="max-w-6xl mx-auto mt-6">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />

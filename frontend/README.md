@@ -7,6 +7,9 @@ Built with React 18, Vite, Tailwind CSS, and Zustand state management.
 ## 📋 Features
 
 - **Three-Column Feed Layout**: Perfectly centered content with Top Innovators and Trending Projects sidebars
+- **Modern Profile Design**: Two-column layout with bio card sidebar (340-400px) and 2-column project grid
+- **Avatar System**: Cloudinary-hosted avatars with smart fallback to ui-avatars.com for generated initials
+- **Social Links Integration**: Display Twitter, LinkedIn, Instagram profiles with icon badges (lucide-react)
 - **Rich Content Editor**: Editor.js integration with 11+ plugins for posts
 - **Project Timeline**: Collapsible timeline view with color-coded post types
 - **Media Carousel**: Fixed-width image/video display with navigation
@@ -67,7 +70,7 @@ frontend/src/
 │   ├── ForgotPassword.jsx     # Password reset flow
 │   ├── Login.jsx              # Login page
 │   ├── PostView.jsx           # Single post page
-│   ├── Profile.jsx            # User profile page
+│   ├── Profile.jsx            # User profile (2-col: bio card + projects grid)
 │   ├── Project.jsx            # Project detail page
 │   ├── Search.jsx             # Global search page
 │   └── Signup.jsx             # Registration page
@@ -140,6 +143,35 @@ justify-content: center
 - **Left Sidebar**: Top Innovators (300px)
 - **Center**: Main feed (550-700px responsive)
 - **Right Sidebar**: Trending Projects (300px)
+
+### Profile Layout (Profile.jsx)
+
+Two-column Flexbox layout:
+```css
+display: flex
+align-items: flex-start
+gap: 2rem
+```
+
+- **Left Sidebar**: Bio card (340-400px fixed width)
+  - Username badge
+  - Avatar (Cloudinary with fallback)
+  - Name
+  - Project count and Hatch Points
+  - Bio text
+  - Social links (Twitter, LinkedIn, Instagram) with icons
+  - Edit Profile button
+  
+- **Right Content**: Key Hatched Projects
+  - 2-column CSS Grid (`repeat(2, 1fr)`)
+  - First post from each project
+  - Full PostCard component rendering
+
+**Avatar System:**
+- Primary: Cloudinary-hosted user avatar
+- Fallback: ui-avatars.com API with user's name/username as initials
+- Error handling with `onError` callback
+- Loading state with pulse animation
 
 ### Editor.js Integration
 
@@ -240,6 +272,22 @@ files.forEach(file => formData.append('media', file))
 await api.post('/posts', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 })
+
+// Update profile with social links
+await api.put(`/users/${userId}`, {
+  name: 'John Doe',
+  bio: 'Full-stack developer',
+  socialLinks: {
+    twitter: 'https://twitter.com/johndoe',
+    linkedin: 'https://linkedin.com/in/johndoe',
+    instagram: '@johndoe'
+  }
+})
+
+// Get user profile with projects
+const { data: user } = await api.get(`/users/${username}`)
+const { data: projects } = await api.get(`/projects/user/${username}`)
+// Projects include populated posts with user data for avatars
 ```
 
 ## 🎯 Points System Integration
