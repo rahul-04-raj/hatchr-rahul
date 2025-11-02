@@ -8,6 +8,7 @@ const MediaSchema = new mongoose.Schema({
 }, { _id: false });
 
 const PostSchema = new mongoose.Schema({
+  title: { type: String, required: true, trim: true },
   caption: { type: String, default: '' },
   media: [MediaSchema], // Array of media items (supports up to 10)
   // Keep old field for backward compatibility
@@ -20,8 +21,12 @@ const PostSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['update', 'announcement', 'milestone'],
+    enum: ['update', 'announcement', 'milestone', 'hatching'],
     default: 'update'
+  },
+  isHatching: {
+    type: Boolean,
+    default: false
   },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

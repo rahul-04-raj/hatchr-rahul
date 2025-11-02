@@ -49,6 +49,33 @@ router.post('/', auth, upload.single('coverImage'), async (req, res) => {
     }
 });
 
+// Search projects
+router.get('/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+
+        if (!q) {
+            return res.status(400).json({ message: 'Search query parameter required' });
+        }
+
+        const projects = await Project.find({
+            $or: [
+                { title: { $regex: q, $options: 'i' } },
+                { description: { $regex: q, $options: 'i' } },
+                { category: { $regex: q, $options: 'i' } }
+            ]
+        })
+            .sort('-createdAt')
+            .populate('user', 'username name avatar')
+            .limit(50);
+
+        res.json(projects);
+    } catch (error) {
+        console.error('Error searching projects:', error);
+        res.status(500).json({ message: 'Failed to search projects' });
+    }
+});
+
 // Get all projects for the logged-in user
 router.get('/my', auth, async (req, res) => {
     try {
@@ -76,12 +103,77 @@ router.get('/user/:username', async (req, res) => {
         const projects = await Project.find({ user: user._id })
             .sort('-createdAt')
             .populate('user', 'username avatar')
-            .populate('posts');
+            .populate({
+                path: 'posts',
+                populate: {
+                    path: 'user',
+                    select: 'username avatar'
+                }
+            });
 
         res.json(projects);
     } catch (error) {
         console.error('Error fetching user projects:', error);
         res.status(500).json({ message: 'Failed to fetch user projects' });
+    }
+});
+
+// GET /api/projects/trending - Get trending projects
+router.get('/trending', async (req, res) => {
+    try {
+        // Get all projects with their posts populated
+        const projects = await Project.find()
+            .populate('user', 'username name avatar')
+            .populate('posts')
+            .lean();
+
+        // Calculate trending score for each project
+        const projectsWithScores = projects.map(project => {
+            let score = 0;
+            
+            // Count total engagement from posts
+            if (project.posts && project.posts.length > 0) {
+                project.posts.forEach(post => {
+                    const upvotes = post.upvotes ? post.upvotes.length : 0;
+                    const downvotes = post.downvotes ? post.downvotes.length : 0;
+                    const comments = post.comments ? post.comments.length : 0;
+                    
+                    // Score = upvotes - downvotes + (comments * 0.5) + post count bonus
+                    score += upvotes - downvotes + (comments * 0.5);
+                });
+                
+                // Bonus for having multiple posts
+                score += project.posts.length * 2;
+            }
+            
+            return {
+                ...project,
+                score: Math.max(0, score) // Ensure non-negative score
+            };
+        });
+
+        // Sort by score and get top 4
+        const trendingProjects = projectsWithScores
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 4)
+            .map(p => ({
+                _id: p._id,
+                title: p.title,
+                user: p.user,
+                score: Math.round(p.score),
+                coverImage: p.coverImage
+            }));
+
+        res.json({
+            success: true,
+            projects: trendingProjects
+        });
+    } catch (error) {
+        console.error('Error fetching trending projects:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch trending projects' 
+        });
     }
 });
 

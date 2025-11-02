@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import FixedWidthMedia from './FixedWidthMedia';
+import { FIXED_WIDTH, BAR_COLOR } from '../config/postConfig';
 
 export default function MediaCarousel({ media }) {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -102,10 +104,10 @@ export default function MediaCarousel({ media }) {
     };
 
     return (
-        <div className="relative w-full aspect-square bg-black">
+        <div className="relative w-full bg-black">
             {/* Media Display */}
             <div
-                className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
+                className="relative w-full overflow-hidden cursor-grab active:cursor-grabbing"
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
@@ -117,30 +119,16 @@ export default function MediaCarousel({ media }) {
                 {mediaItems.map((item, index) => (
                     <div
                         key={index}
-                        className={`absolute inset-0 transition-opacity duration-300 ${index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                        className={`transition-opacity duration-300 ${index === currentIndex ? 'opacity-100' : 'opacity-0 absolute inset-0'
                             }`}
+                        style={{ backgroundColor: BAR_COLOR }}
                     >
-                        {item.type === 'video' ? (
-                            <video
-                                ref={el => videoRefs.current[index] = el}
-                                src={item.url}
-                                controls
-                                controlsList="nodownload"
-                                className="w-full h-full object-contain"
-                                playsInline
-                                preload="metadata"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                Your browser does not support the video tag.
-                            </video>
-                        ) : (
-                            <img
-                                src={item.url}
-                                alt={`Media ${index + 1}`}
-                                className="w-full h-full object-contain"
-                                draggable="false"
-                            />
-                        )}
+                        <FixedWidthMedia
+                            src={item.url}
+                            type={item.type}
+                            fixedWidth={FIXED_WIDTH}
+                            barColor={BAR_COLOR}
+                        />
                     </div>
                 ))}
             </div>

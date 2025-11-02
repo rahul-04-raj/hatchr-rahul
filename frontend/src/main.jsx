@@ -10,6 +10,8 @@ import ForgotPassword from './pages/ForgotPassword'
 import Feed from './pages/Feed'
 import Profile from './pages/Profile'
 import ProjectPage from './pages/Project'
+import PostView from './pages/PostView'
+import Search from './pages/Search'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useTheme } from './store/useTheme'
@@ -28,12 +30,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Navbar />
-        <div className="max-w-3xl mx-auto mt-6">
+        <div className="max-w-6xl mx-auto mt-6">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
+            <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+            <Route path="/post/:postId" element={<ProtectedRoute><PostView /></ProtectedRoute>} />
             <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/project/:projectId" element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/feed" replace />} />

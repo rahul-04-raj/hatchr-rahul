@@ -17,11 +17,10 @@ const messageRoutes = require('./routes/messages');
 
 const app = express();
 app.use(helmet());
-// Allow requests from the frontend and allow credentials (cookies)
-const FRONTEND_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173';
+// Allow requests from all domains
 // Configure CORS for all routes
 app.use(cors({
-  origin: FRONTEND_ORIGIN,
+  origin: true,
   credentials: true,
   exposedHeaders: ['Cross-Origin-Resource-Policy']
 }));
@@ -36,7 +35,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads';
 app.use('/' + UPLOAD_DIR, (req, res, next) => {
   res.set({
-    'Access-Control-Allow-Origin': FRONTEND_ORIGIN,
+    'Access-Control-Allow-Origin': req.headers.origin || '*',
     'Access-Control-Allow-Methods': 'GET',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Credentials': 'true',
@@ -56,7 +55,7 @@ app.use('/api/messages', messageRoutes);
 const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: FRONTEND_ORIGIN, methods: ['GET', 'POST'], credentials: true } });
+const io = new Server(server, { cors: { origin: true, methods: ['GET', 'POST'], credentials: true } });
 
 // simple map of userId -> socket.id (supports single socket per user for simplicity)
 const userSockets = new Map();

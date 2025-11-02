@@ -6,6 +6,9 @@ export default function EditProfileModal({ user, onClose, onUpdate }) {
     const [formData, setFormData] = useState({
         name: user.name || '',
         bio: user.bio || '',
+        twitter: user.socialLinks?.twitter || '',
+        linkedin: user.socialLinks?.linkedin || '',
+        instagram: user.socialLinks?.instagram || '',
     });
     const fileInputRef = useRef(null);
 
@@ -64,7 +67,12 @@ export default function EditProfileModal({ user, onClose, onUpdate }) {
             setLoading(true);
             const response = await API.put(`/users/${user._id}`, {
                 name: formData.name,
-                bio: formData.bio
+                bio: formData.bio,
+                socialLinks: {
+                    twitter: formData.twitter,
+                    linkedin: formData.linkedin,
+                    instagram: formData.instagram
+                }
             });
             if (response.data.success) {
                 onUpdate(response.data.user);
@@ -141,6 +149,56 @@ export default function EditProfileModal({ user, onClose, onUpdate }) {
                             className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Tell us about yourself..."
                         />
+                    </div>
+
+                    {/* Social Links */}
+                    <div className="space-y-3">
+                        <h3 className="text-sm font-medium text-gray-700">Social Links</h3>
+                        
+                        {/* Twitter */}
+                        <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                                Twitter (username or full URL)
+                            </label>
+                            <input
+                                type="text"
+                                name="twitter"
+                                value={formData.twitter}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                                placeholder="@username or https://twitter.com/username"
+                            />
+                        </div>
+
+                        {/* LinkedIn */}
+                        <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                                LinkedIn (username or full URL)
+                            </label>
+                            <input
+                                type="text"
+                                name="linkedin"
+                                value={formData.linkedin}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                                placeholder="username or https://linkedin.com/in/username"
+                            />
+                        </div>
+
+                        {/* Instagram */}
+                        <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                                Instagram (username or full URL)
+                            </label>
+                            <input
+                                type="text"
+                                name="instagram"
+                                value={formData.instagram}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm"
+                                placeholder="@username or https://instagram.com/username"
+                            />
+                        </div>
                     </div>
 
                     {/* Submit Button */}

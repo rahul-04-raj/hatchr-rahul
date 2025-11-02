@@ -8,6 +8,11 @@ const UserSchema = new mongoose.Schema({
   avatar: { type: String, default: '' },
   bio: { type: String, default: '' },
   hatchPoints: { type: Number, default: 0 },
+  socialLinks: {
+    twitter: { type: String, default: '' },
+    linkedin: { type: String, default: '' },
+    instagram: { type: String, default: '' }
+  },
   pointsHistory: [{
     action: { type: String, enum: ['project_created', 'post_created', 'received_upvote', 'comment_made'] },
     points: Number,
